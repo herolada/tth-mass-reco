@@ -1,0 +1,1712 @@
+%*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+%*-*-*-*-*-*-*-HEADER-*-*-*-*-*-*-*-*
+%*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+
+\documentclass{ctuthesis}
+\ctusetup{
+xdoctype = B,
+xfaculty = F3,
+mainlanguage = english,
+titlelanguage = english,
+title-english = {Application of Machine Learning for the Higgs Boson Mass Reconstruction Using ATLAS Data},
+title-czech = {Aplikace strojového učení pro odhad hmotnosti Higgsova bosonu z dat detektoru ATLAS},
+department-english = {Department of Cybernetics},
+author = {Adam Herold},
+supervisor = {prof Dr. Ing. Jan Kybic},
+supervisor-specialist = {doc. Dr. André Sopczak},
+day = 4,
+month = 01,
+year = 2022,
+keywords-czech = {CERN, ATLAS, Higgsův boson, rekonstrukce hmotnosti, neuronové sítě},
+keywords-english = {CERN, ATLAS, Higgs boson, Mass reconstruction, Neural networks},
+fieldofstudy-english = {Cybernetics and Robotics},
+fieldofstudy-czech = {Kybernetika a robotika},
+specification-file = {zadani.pdf},
+}
+\ctuprocess
+\usepackage[sorting=none]{biblatex} %Imports biblatex package
+\usepackage{cancel}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{makecell}
+\usepackage{bm}
+\usepackage{amsbsy}
+\usepackage{siunitx}
+\usepackage[obeyspaces]{url}
+
+
+\renewcommand\theadalign{tr}
+%\renewcommand\theadfont{\bfseries}
+\renewcommand\theadfont{\normalsize}
+\renewcommand\theadgape{\Gape[4pt]}
+\renewcommand\cellgape{\Gape[4pt]}
+
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+
+
+\newcommand{\PreserveBackslash}[1]{\let\temp=\\#1\let\\=\temp}
+\newcolumntype{C}[1]{>{\PreserveBackslash\centering}p{#1}}
+\newcolumntype{R}[1]{>{\PreserveBackslash\raggedleft}p{#1}}
+\newcolumntype{L}[1]{>{\PreserveBackslash\raggedright}p{#1}}
+
+\usepackage{float}
+\floatstyle{plaintop}
+\restylefloat{table}
+
+\addbibresource{bibliography.bib}
+
+\usepackage{algpseudocode}
+\usepackage{seqsplit}
+
+%*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+%*-*-*-*-*-*-*-MANDATORY STUFF-*-*-*-*-*-*-*-*
+%*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+
+\ctutemplateset{maketitle twocolumn default}{
+	\begin{twocolumnfrontmatterpage}
+		\ctutemplate{twocolumn.thanks}
+		\ctutemplate{twocolumn.declaration}
+		\ctutemplate{twocolumn.abstract.in.titlelanguage}
+		\ctutemplate{twocolumn.abstract.in.secondlanguage}
+		\ctutemplate{twocolumn.tableofcontents}
+		\ctutemplate{twocolumn.listoffigures}
+	\end{twocolumnfrontmatterpage}
+}
+
+
+\begin{abstract-english}
+This thesis deals with the reconstruction of the Higgs boson mass decaying in the $2lSS + 1 \tau _{had}$ channel in the $t\bar{t}H$ production. Based on the reconstructed mass, the goal is to separate the signal from background productions such as the $t\bar{t}Z$.
+
+The data created by the full ATLAS detector simulation are used to develop two neural networks. First, a classification neural network that organizes the data by assigning detected particles to corresponding positions in the channel.
+
+Second, a regression neural network that reconstructs the mass of the Higgs boson. The developed neural network is then tested on different data selections and is shown to outperform the Missing Mass Calculator technique.
+
+Finally, the neural network is tested on real ATLAS data.
+
+\end{abstract-english}
+
+\begin{abstract-czech}
+V této práci se zabýváme rekonstrukcí hmotnosti Higgsova bosonu v rozpadovém kanálu $2lSS + 1 \tau _{had}$ v produkci $t\bar{t}H$. Na základě rekonstruované hmotnosti separujeme signál od pozadí, kterým je například produkce $t\bar{t}Z$.
+
+Na datech ze simulace detektoru ATLAS vyvineme dvě neuronové sítě. Nejprve klasifikační neuronovou síť, která data uspořádává přiřazením částic do jednotlivých pozic v kanále.
+
+Poté neuronovou síť, která rekonstruuje hmotnost Higgsova bosonu. Tuto síť testujeme na různých selekcích dat a ukazujeme, že dosahuje lepších výsledků než technika Missing Mass Calculator.
+
+Na závěr je proveden test na skutečných datech z detektoru ATLAS.
+\end{abstract-czech}
+
+\begin{thanks}
+Thank you to my supervisor, Dr. André Sopczak, who has given me a lot of his time and advice for which I am grateful. Thank you to my supervisor, prof. Jan Kybic, who has consulted my work with me. And thank you to my family, especially my mom, whom I love dearly.
+\end{thanks}
+
+\begin{declaration}
+I declare that the presented work was developed independently and that I have listed all sources of information used within it in accordance with the methodical instructions for observing the ethical principles in the preparation of university theses.
+
+\medskip
+
+Prague, \monthinlanguage{title} \ctufield{day}, \ctufield{year}
+
+\vspace*{3cm}
+
+Prohlašuji, že jsem předloženou práci vypracoval samostatně a že jsem uvedl veškeré použité informační zdroje v souladu s Metodickým pokynem o dodržování etických principů při přípravě vysokoškolských závěrečných prací.
+
+\medskip
+
+V Praze, \ctufield{day}.~\monthinlanguage{second}~\ctufield{year}
+\end{declaration}
+
+%*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+%*-*-*-*-*-*-*-MAIN PART OF THESIS-*-*-*-*-*-*-*-*
+%*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+\begin{document}
+%pkg-biblatex = true
+\maketitle
+
+%*-*-*-*-*-*-*-INTRODUCTION-*-*-*-*-*-*-*-*
+\chapter*{Introduction}
+In the ATLAS detector, the Higgs boson can be produced alongside a pair of top quarks. As the Higgs boson is short-lived, it decays before it can be detected \cite{higgs_3}. The decay products of the Higgs boson include visible particles such as quark jets and leptons but also the undetectable neutrinos, which make the reconstruction of the Higgs boson and its mass a challenging task.
+
+While the Higgs boson mass is known to be $125.18 \pm 0.16$ GeV \cite{W_Z_decay}, the reconstruction of its mass can help us separate events, in which it is created, from background events in which Z boson, W boson or different particles are produced instead of the Higgs boson.
+
+The Higgs boson, alongside the two top quarks, can decay in many different channels, and we will be focusing on a particular one — the $2lSS + 1 \tau _{had}$ channel in which two same-charged leptons and one hadronical tau candidate are produced. With the decay narrowed down, we will first assign the detected jets and leptons to the Higgs or one of the top quarks to make the data structured. Then we reconstruct the mass from the organized data.
+
+Both of these tasks will be done using machine learning — in particular, neural networks. Our goal will be to develop such neural networks that will allow us to reconstruct the mass of the Higgs boson and separate it from the background.
+
+%*-*-*-*-*-*-*-THEORETICAL BACKGROUND-*-*-*-*-*-*-*-*
+\chapter{Theoretical background}
+
+\section{CERN}
+CERN (from French \emph{Conseil Européen pour la Recherche Nucléaire}\footnote{In English \emph{European Council for Nuclear Research}}) is an organization focused on research in fundamental physics most notably through the usage of their world-class particle accelerator facilities \cite{cern1}. It was established in the 1950s and since then has been a great contributor to the world of physics and science \cite{cern2}.
+
+In 2008 the Large Hadron Collider (LHC) started up and to this day it remains the largest and most powerful particle accelerator in the world \cite{lhc1}. It consists of a two-ring hadron accelerator and collider built in a 27 km long tunnel and it is designed for proton beams collisions with a centre-of-mass energy of 14 TeV \cite{lhc2}. The schematic of the LHC is in Figure \ref{lhc_schematic}.
+
+\begin{figure}[h]
+\centering{
+\resizebox{100mm}{!}{\includegraphics{images/lhc_schematic.png}}
+\caption[Schematic of the LHC]
+{Schematic of the LHC \par \small Schematic showing detectors CMS, LHCb, ATLAS and ALICE. Also showing other CERN accelerators — the Proton Synchrotron (PS) and the Super Proton Synchrotron (SPS). Figure modified from source \cite{lhc_schematic}.} 
+\label{lhc_schematic}
+}
+\end{figure}
+
+\subsection{ATLAS}
+There are eight experiments operating at the LHC, focusing on different particles and using different detectors. The two largest experiments are ATLAS (A Toroidal LHC Apparatus) and CMS (Compact Muon Solenoid), both being independent general-purpose detectors \cite{atlas1}.
+
+The ATLAS detector is 44 meters long and 25 meters in diameter. Around 1 billion proton-proton collisions (events) occurs each second inside of the ATLAS detector. Each event produces multiple particles which are then detected by one of the many sensors of the detector. These measured events are then filtered by a hardware and a software trigger to a rate of around 2000 \emph{interesting} events per second. The ATLAS detector measures properties of the particles such as their direction, momentum, charge, energy and the particle type \cite{atlas2}.
+
+%\textcolor{red}{Tady můžou být detailněji rozebrány části ATLAS detektoru. https://atlas.cern/resources/fact-sheets}
+
+\begin{figure}[h]
+\centering{
+\resizebox{125mm}{!}{\includegraphics{images/atlas_detector.png}}
+\caption[Model of the ATLAS detector with its distinct layers]
+{Model of the ATLAS detector with its distinct layers \par \small Source \cite{atlas_image}.}
+\label{atlas_detector_schematic}
+}
+\end{figure}
+
+\section{Standard Model Particles}
+"\emph{The Standard Model of particle physics is the theory used to describe the interactions of fundamental particles (or fermions) and fundamental forces (which are conveyed by particles called bosons)} \cite{standard_model}."
+
+The Standard Model further divides fermions into quarks and leptons, each fermion also has an antimatter counterpart with opposite charge but otherwise same properties.
+
+%\textcolor{red}{Možnost odstavce o historii, nejúspěšnější model, není plně ověřený, nezahrnuje %gravitaci...https://home.cern/science/physics/standard-model}
+
+\begin{figure}[h]
+\centering{
+\resizebox{120mm}{!}{\includegraphics{images/standard_model.png}}
+\caption[Particles of the Standard Model]{Particles of the Standard Model \par\small Source \cite{standard_model_image}.} 
+\label{standard_model_image}
+}
+\end{figure}
+
+\subsection{Quarks}
+\label{top_decay}
+There are six different flavors of quarks: up (u) and down (d), charm (c) and strange (s), top (t) and bottom (b). In this thesis, we will differentiate between top, bottom and other quarks (abbreviated as \emph{non-b} quarks).
+
+The top quark is heavy enough to decay into a W boson and a b quark, which is the dominant channel. The W boson then decays either into a pair of quarks or a lepton and a neutrino \cite[p. 638]{pdg_review}:
+$$t \rightarrow W^{+} \: b \rightarrow q \: \overline{q}' \: b$$
+$$t \rightarrow W^{+} \: b \rightarrow \ell^{+} \: \nu_{\ell} \: b$$
+
+Quarks are never observed directly in the detector. Instead they are detected as sprays of hadrons called \emph{jets}. Besides quarks, there is another source of jets, which is gluons. Discriminating between quark and gluon jets is a complex task and a focus of studies at ATLAS and CMS \cite{jets_1}\cite{jets_2}.
+
+\subsection{Leptons}
+In the Standard Model, we differentiate between six leptons: electron (e), muon ($\mu$), tau ($\tau$) and their corresponding neutrinos ($\nu$). In this thesis, we will use a different nomenclature, where when referring to leptons (symbol $\ell$), we will only consider the two light leptons, electron and muon.
+
+Much like quarks, taus are also not detected directly, as they have a short lifespan ($2.8\times 10^{-13}$ seconds) and decay into a tau neutrino and a virtual W boson, which then decays either \emph{leptonically}:
+\begin{equation}\tau^{-} \rightarrow W^{-}\: \nu_{\tau} \rightarrow \ell^{-} \:\overline{\nu}_{\ell}\: \nu_{\tau}
+\end{equation}
+or \emph{hadronically}:
+\begin{align}
+\begin{split}
+    \tau^{-} &\rightarrow W^{-}\: \nu_{\tau} \rightarrow h^{-} \:\nu_{\tau} \\
+    \tau^{-} &\rightarrow W^{-}\: \nu_{\tau} \rightarrow h^{-}\:h^{+}\:h^{-} \:\nu_{\tau}
+\end{split}
+\end{align}
+
+where $h$ is a hadron \cite{taus_1}\cite{taus_2}. In the case of the leptonic decay, it is a non-trivial task to associate the detected lepton to either the tau decay or a different decay process (e.g. leptonic decay of a top quark).
+
+\subsection{Neutrinos}
+Neutrinos do not have charge, are nearly massless and very hard to detect, as they only interact weakly \cite{neutrinos}. In ATLAS, neutrinos are not detected and, as such, are a source of missing energy in the detected decay process.
+
+Because of this missing energy, it is a challenging task to reconstruct the mass of any particle with a neutrino as one of its decay products.
+
+\subsection{Representation of Particles}
+\label{particles_representation}
+In this thesis, particles will be represented in two interchangeable ways, both of them being a vector of four values, that fully describes the particle kinematics.
+
+First is the ($p_T$, $\eta$, $\phi$, $E$)$^T$ vector, where $p_T = |\vec{p}_T| = |(p_X, p_Y)^T|$ is the transverse momentum, $\eta$ is pseudorapidity, $\phi$ is azimuthal angle and $E$ is energy. This is the representation in which the data of the particles is stored.
+
+Second is the momentum and energy vector ($p_X$, $p_Y$, $p_Z$, $E$)$^T$, also called the four-vector, where ($p_X$, $p_Y$, $p_Z$)$^T$ is the momentum of the particle in Cartesian coordinates. The variables in this representation will be used in the NN. This representation also has one considerable advantage, which is the fact that momenta and energy are conserved according to the laws of conservation. This allows us to add children particles together to create their parent particle. For example, we can write the following equation for the Higgs boson:
+\begin{equation}
+H = \tau^+ + \tau^-,
+\end{equation}
+where $H$, $\tau^+$ and $\tau^-$ are the four-vectors representing those particles.
+
+The relations allowing us to switch between the two mentioned representations without losing information are the equations \cite[p.26]{decay_channel_image}
+
+\begin{equation}
+\begin{aligned}
+   p_X = p_T\cdot \cos \phi, \\
+   p_Y = p_T\cdot \sin \phi, \\
+   p_Z = p_T\cdot \sinh \eta.
+\end{aligned}
+\label{goniometrix}
+\end{equation}
+
+\subsection{Invariant mass and angular distance}
+\label{mass_deltar_equations}
+There are two more particle characteristics we will be using — invariant mass ($m_0$) and angular distance ($\Delta R$).
+
+The invariant mass is a mass independent of the reference frame of the particle's momenta and energies \cite{invariant_mass}. It is calculated from the momenta and energy as \cite[p.26]{decay_channel_image}
+\begin{equation}
+\label{masses_equation}
+    m_{0} = \sqrt{E^2 - p_x^2 - p_y^2 - p_z^2}.
+\end{equation}
+
+Approximate invariant masses of notable particles are in Table \ref{masses} \cite{W_Z_decay}.
+
+\begin{table}[h]
+\begin{ctucolortab}
+\begin{tabular}{ R{4cm} R{4cm}  } 
+    \toprule
+    Particle          &Invariant mass         \\
+    \midrule
+    Higgs boson     &125.18 GeV         \\
+    Z boson         &91.19 GeV          \\
+    W boson         &80.38 GeV           \\
+    Tau             &1.78 GeV           \\
+    Neutrinos       &0.00 GeV           \\
+    \bottomrule
+\end{tabular}
+\end{ctucolortab}
+\caption{Approximate invariant masses of notable particles}
+\label{masses}
+\end{table}
+
+The angular distance between two particles is the angle between their momentum vectors. It is calculated from the difference between their respective $\eta$ and $\phi$ as \cite[p.22]{decay_channel_image}
+
+\begin{equation}
+    \Delta R = \sqrt{(\Delta \eta)^2 + (\Delta \phi)^2}
+\end{equation}
+
+%The transverse energy can be computed from the transverse momentum vector and the mass of a particle %as \cite{transverse_energy} \begin{equation}
+%    \vec{E_T} = E\frac{\vec{p}_T}{|\vec{p}|}
+%\end{equation}
+
+\subsection{Missing transverse energy}
+
+The missing transverse energy is a characteristic of a whole event. It stems from the fact that the two protons which collide in the detector come along the beam pipe and thus only have non-zero momentum in the z-axis 
+\[\vec{p_p} = (0,0,p_Z)^T \;\;\;\; p_Z \neq 0.\]
+
+After their collision the total momentum has to be conserved, meaning that the sum of the momentum vectors of all the particles that are created in the collision has to be equal to the sum of the two proton momentum vectors
+\[\sum_{created} \vec{p} = \vec{p_{p_1}} + \vec{p_{p_2}}.\]
+
+In reality, when we sum the momentum vectors of all particles detected in an event, the sum will usually have the x and y component non-zero:
+\[ \sum_{detected} \vec{p} = (p_X,p_Y,p_Z)^T \;\;\;\; p_X,p_Y \neq 0.\]
+
+This can be attributed to particles that escaped the detector undetected — notably the undetectable neutrinos. We then define the missing transverse energy as \cite{missing_transverse_energy}
+
+\begin{equation}
+    \cancel{\mathbf{E}}_T = (E_{T_X}, E_{T_Y})^T = -\sum_{detected} \vec{p}_T,
+\label{met_equation}
+\end{equation}
+
+where $detected$ symbolizes the set of all detected particles.
+
+
+
+
+\section{Higgs Boson}
+To explain why the carriers of the weak nuclear interaction — the W and Z bosons — have masses, while in theory, they should be massless, in 1964, the Brout-Englert-Higgs (BEH) mechanism was proposed. This mechanism required a new, yet-to-be-discovered field and its associated particle — the Higgs boson \cite{higgs}.
+
+On 4 July 2012, the Higgs boson has been confirmed by the ATLAS and CMS experiments at CERN, when a new particle with a mass around 125 GeV was observed \cite{higgs}.
+
+Since then, more experiments and studies have been carried out to further explore its properties.
+
+\subsection{Production and Decay Channels}
+\label{signal_background}
+As our primary focus is reconstruction of the Higgs boson mass, we will be distinguishing between \emph{signal} and \emph{background} events. Signal events are the ones in which Higgs boson is produced and background events are the ones where either a Z boson, W boson or other particles are produced instead.
+
+\subsubsection{Signal events}
+The Higgs boson is produced in the LHC mainly through gluon fusion (ggF) or vector boson fusion \cite{higgs_2}. Along with the Higgs, there are often other particles produced. In this thesis, we focus on the case, where the Higgs is produced together with a pair of top quarks (\emph{$t\overline{t}H$ production}):
+$$gg \rightarrow t\: \overline{t} \: H.$$
+
+This is a production that has been observed recently in 2018 \cite{ttH_observation}.
+
+The Higgs boson has a very short lifetime ($1.6\times 10^{-22}$ seconds) thus it decays before it can be detected \cite{higgs_3}. As the Higgs boson has a great invariant mass (approx. 125 GeV) it can decay into a pair of bosons or a pair of fermions, for example \cite{higgs_2}:
+\begin{align}
+\begin{split}
+ H &\rightarrow b\: \overline{b}, \\
+ H &\rightarrow W\: W, \\
+ H &\rightarrow \tau\: \tau.
+\end{split}
+\end{align}
+The last mentioned channel will be the one we will be focusing on.
+
+As the taus also decay (leptonically or hadronically), we will narrow our decay channel even more to a channel with two same charge leptons and a hadronically decaying tau (the $2\ell SS + 1 \tau_{had}$ channel) in its final state\footnote{Final state particles are the ones that are detected by ATLAS.}.
+
+Lastly, we will narrow down the decay of the top quarks to the \emph{lepton+jets} case (Sec. \ref{top_decay} — one top decays into a pair of quarks and the other one into a lepton and a neutrino, both top decays also include a b quark):
+\begin{equation}
+\label{tt_decay}
+t\:\overline{t} \rightarrow W^{+} \: b \: W^{-} \: \overline{b} \rightarrow  q \: \overline{q}' \: b \: \ell'^{-} \: \overline{\nu}_{\ell} \: \overline{b}.
+\end{equation}
+
+An example\footnote{There can be slight differences on a case by case basis, such as a permutation of the top and anti-top pair decay or the permutation of the positively and negatively charged tau pair decay.} Feynman diagram of this channel is shown in Fig. \ref{decay_channel}.
+
+\begin{figure}[h]
+\centering{
+\resizebox{126mm}{!}{\includegraphics{images/decay_channel.png}}
+\caption[Diagram of the $2\ell SS + 1 \tau_{had}$ decay channel]{Diagram of the $2\ell SS + 1 \tau_{had}$ decay channel \par \small The final state particles on the right side of the diagram are the ones detected, except for the undetectable neutrinos. Figure modified from source \cite[p.23]{decay_channel_image}.} 
+\label{decay_channel}
+}
+\end{figure}
+
+\subsubsection{Background events}
+The Z and W bosons are produced in quark-antiquark annihilations in the LHC \cite{W_Z_production}. Similarly to the Higgs boson, they are also produced alongside a pair of top quarks (\emph{$t\overline{t}H$ production}):
+
+\begin{align}
+\begin{split}
+q + \overline{q} &\rightarrow t\: \overline{t} \: Z, \\
+q + \overline{q} &\rightarrow t\: \overline{t} \: W.
+\end{split}
+\end{align}
+
+Another similarity between the Higgs boson and the W and Z bosons is their short lifetime (approx. $3 \times 10^{-25}$ seconds), which means they also decay before they can be detected.
+
+The Z boson can decay into a lepton-lepton pair, a neutrino-neutrino pair, a tau-tau pair or into hadrons:
+\begin{align}
+\begin{split}
+Z &\rightarrow \ell\: \overline{\ell}, \\
+Z &\rightarrow \nu\: \nu, \\
+Z &\rightarrow \tau\: \tau.
+\end{split}
+\end{align}
+The W boson, on the other, hand mainly decays into a lepton-neutrino pair, a tau-neutrino pair or into hadrons \cite{W_Z_decay}:
+\begin{align}
+\begin{split}
+W &\rightarrow \ell\: \nu_{\ell}, \\
+W &\rightarrow \tau\: \nu_{\tau}, \\
+W &\rightarrow \text{hadrons}.
+\end{split}
+\end{align}
+The important decay mode here is the tau-tau pair, which is available for the Higgs and Z bosons, but not for the W boson. This means that the diagram \ref{decay_channel} can be also used to describe the decay of the $t\overline{t}Z$ (with the replacement of H for Z in the diagram), but it cannot be used for the $t\overline{t}W$.
+
+Other background productions exist such as $t\overline{t}$. All these background productions can decay in the $2\ell SS + 1 \tau_{had}$ channel and as such cannot be easily separated from the signal. The separation of signal and background will be part of our task.
+
+\subsection{Missing Mass Calculator}
+\label{sec:mmc}
+Methods for reconstruction of the $\tau\: \tau$ mass exist, and we will focus on one of them — the Missing Mass Calculator (MMC) — which outperforms other common methods \cite[p.18]{mmc_paper}.
+
+The technique first assumes perfect detector resolution and no neutrinos outside of the $\tau\: \tau$ decay. We then have seven (for the case where one tau decays hadronically and one leptonically) unknowns: $p_X$, $p_Y$, $p_Z$ and $m$\footnote{Which is another representation of a particle, with mass instead of energy, similar to the ones we have described in Sec. \ref{particles_representation}.} for the invisible product of each of the two taus. For the hadronic tau the invisible product is just one neutrino, so we can put its $m=0$, reducing the eight variables to seven. For these seven unknowns we have the following four momentum and mass conservation equations \cite[p.5-6]{mmc_paper}:
+
+\begin{align}
+\begin{split}
+\cancel{E}_{T_X} = p_{mis_1} \sin\theta_{mis_1} \cos \phi_{mis_1} + p_{mis_2} \sin \theta_{mis_2} cos\phi_{mis_2}, \\
+\cancel{E}_{T_Y} = p_{mis_1} \sin\theta_{mis_1} \sin \phi_{mis_1} + p_{mis_2} sin \theta_{mis_2} \sin\phi_{mis_2}, \\
+M^2_{\tau_1} = m^2_{mis_1} + m^2_{vis_1} + 2\sqrt{p^2_{vis_1}+m^2_{vis_1}}\sqrt{p^2_{mis_1}+m^2_{mis_1}} \\- 2 p_{vis_1}p_{mis_1}\cos \Delta\theta_{vm_1}, \\
+M^2_{\tau_2} = m^2_{mis_2} + m^2_{vis_2} + 2\sqrt{p^2_{vis_2}+m^2_{vis_2}}\sqrt{p^2_{mis_2}+m^2_{mis_2}} \\- 2 p_{vis_2}p_{mis_2}\cos \Delta\theta_{vm_2},
+\end{split}
+\label{mmc_eqs}
+\end{align}
+
+where $mis$ and $vis$ symbolize the invisible and visible tau products respectively, $M_\tau = 1.777$ GeV as per Table \ref{masses} and $\Delta\theta_{vm_i}$ is the angular distance between the visible and invisible product of the $i$-th tau \cite[p.6]{mmc_paper}.
+
+With seven unknowns and four equations, this is an under-constrained system and as such it does not have one exact solution. From all possible solutions, the MMC chooses the most likely one. It finds it with the help of additional information, such as "...\emph{the expected angular distance between the neutrino(s) and the visible decays products of the $\tau$ lepton}." \cite[p.6]{mmc_paper} The probability density function of such angular distance is obtained from simulated data \cite[p.7]{mmc_paper}.
+
+The MMC will serve as a comparison to our mass reconstruction method. A very important thing to note is that the assumption of no neutrinos outside of the $\tau\: \tau$ decay is not satisfied in our decay channel (a neutrino is coming from the anti-top branch in Fig. \ref{decay_channel}). This results in a drop in efficiency of the MMC, but it does not make it unusable, as the MMC tries to mitigate the effects of resolution in the measurement of $\cancel{E}_T$ \cite[p.10]{mmc_paper} and the outside neutrino could be viewed as a source of larger resolution.
+
+Lastly, the MMC reconstructs the $\tau\: \tau$ mass, therefore it is only applicable to events with:
+\begin{align}
+\begin{split}
+Z &\rightarrow \tau\: \tau, \\
+H &\rightarrow \tau\: \tau,
+\end{split}
+\end{align}
+and not at all to the $t\overline{t}W$ or $t\overline{t}$ production.
+
+\section{Artificial neural networks}
+\emph{"Artificial neural networks are popular machine learning techniques that simulate the mechanism of learning in biological organisms."} \cite[p.2]{data_augmentation} The building stone of a neural network (NN) is a neuron. In the artificial neural network (ANN) the neuron is represented by a computational unit, which takes weighted signals as input \cite[p.3]{data_augmentation}, processes them and outputs another signal, which can then serve as an input for other neurons, creating a network. The processing of the inputs will in our case be their addition and subsequent use of an activation function:
+
+\begin{equation}
+    y = \Phi(\mathbf{w}^T \mathbf{x}).
+\end{equation}
+
+To create a NN, the neurons are formed into layers. Besides an input and output layer, there will be other intermediate hidden layers \cite[p.5]{data_augmentation}. In the NNs we will be using, the hidden layers will always be fully connected layers, meaning that each neuron takes as an input the output of each neuron in the preceding layer:
+
+\begin{equation}
+    y_{i_j} = \Phi(\mathbf{w}_j^T \mathbf{y}_{i-1}),
+\end{equation}
+
+where $i$ is the index of the layer and $j$ is the index of the neuron in the layer.
+
+Neural networks can be used for different purposes. The two that will be relevant for us are a regression neural network (rNN\footnote{Not to be confused with the recurrent neural network.}), which predicts one or multiple numerical values (e.g. predicting the mass of a particle), and a classification neural network (CNN), which predicts into which of several known categories does the data sample from which the input was generated belong to (e.g. categorization of a particle into quarks and leptons).
+
+\subsection{Activation functions}
+Activation functions are used at the output of neurons. There are many different options, the ones we will be using are following (also illustrated in Fig. \ref{fig:activation_functions}).
+
+\begin{itemize}
+    \item Linear function calculated as \cite[p.13]{data_augmentation}
+    \begin{equation}
+        \Phi(v) = v.
+    \end{equation}
+    
+    \item Rectified linear unit function (ReLU) calculated as \cite[p.14]{data_augmentation}
+    \begin{equation}
+        \Phi(v) = \max\{v,0\}.
+    \end{equation}
+    
+    \item Sigmoid function calculated as \cite[p.13]{data_augmentation}
+    \begin{equation}
+        \Phi(v) = \frac{1}{1+e^{-v}}.
+    \end{equation}
+\end{itemize}
+
+\begin{figure}[h]
+\centering{
+\resizebox{127mm}{!}{\includegraphics{images/activations.pdf}}
+\caption{Activation functions} 
+\label{fig:activation_functions}
+}
+\end{figure}
+
+\subsection{Loss function}
+In the training process of a neural network, two phases can be distinguished. First is the forward phase, when the inputs are processed by the neural network to produce outputs.
+
+In the second — backward — phase, the loss function takes in the outputs of the neural network (i.e. the predictions) and the desired outputs (i.e. the truth) and calculates a score that quantifies the quality of performance of the neural network. The neural network then backpropagates by computing the gradient of the loss function with respect to the weights of the layers. Finally, the weights are updated to minimize the loss \cite[p.22]{data_augmentation}\cite{backpropagation}:
+
+\begin{equation}
+        \mathbf{w}' = \mathbf{w} - \alpha \cdot (\frac{\partial \mathcal{L}}{\partial \mathbf{w}})^T,
+\end{equation}
+where $\alpha$ is the learning rate.
+
+The choice of the loss function defines to some extent the functionality of the neural network. %For example, an rNN and a CNN could have the same architecture except for the loss function, which would make them work as expected.
+
+For the regression a typical loss function is the mean squared error (MSE) \cite[p.176]{data_augmentation}:
+\begin{equation}
+    \mathcal{L} = \frac{1}{n}\sum_{k=1}^{n}({y}_k-{\hat{y}}_k)^2.
+\end{equation}
+
+For the classification into one of two classes (binary classification) the binary cross entropy is used \cite{binary_cross_entropy}.
+\begin{equation}
+    \mathcal{L} = -\frac{1}{n}\sum_{k=1}^{n} {y}_k\cdot \log(\hat{y}_k) + (1-y_k)\cdot log(1-\hat{y}_k).
+\label{bce}
+\end{equation}
+
+
+
+%*-*-*-*-*-*-*-DATA-*-*-*-*-*-*-*-*
+\chapter{Data}
+\section{Analysis levels}
+\label{analysis_levels}
+When it comes to the signal and background productions, there are two different levels of data on which we can study these events:
+\begin{itemize}
+    \item \textbf{Real data} measured by the ATLAS detector.
+  
+    \item \textbf{Generated data} produced by a program (e.g. the Monte Carlo generator PYTHIA \cite{pythia}). It can be further split into two levels:
+    \begin{itemize}
+    \item \textbf{Event generator data} (also called \emph{truth} data). It contains full information ($p_T$, $\eta$, $\phi$ and $E$) of each particle from the event as well as its \emph{children} and \emph{parent}\footnote{Children meaning particles it decays into and parent meaning the particle from which it came.} relations with other particles.
+  
+      \item \textbf{Full ATLAS detector simulation} level of data. At this level, a program takes a generated event and aims to produce data similar to how it would be measured by the real ATLAS detector. The effects this has on the data will be presented in the next section. It is this level of data on which we will study the reconstruction of the Higgs boson mass before applying it to the real data.
+      \end{itemize}
+\end{itemize}
+
+\section{Detector effects}
+\label{detector_effects}
+The data produced by the detector simulation contains less information than we have on the event generator level. This is caused by different effects that are taking place in the detector.
+
+The first group of effects stems from the physical nature of the decay process:
+\begin{itemize}
+    \item We only detect final state particles (i.e. particles without children in Fig. \ref{decay_channel}).
+    \item Neutrinos are not detected.
+    \item We do not know the parents of the detected particles. That is, if we detect two leptons in an event, we do not know which lepton is coming from the \emph{Higgs branch}\footnote{Higgs branch meaning decay products of the Higgs and their further decay products.} and which is coming from the \emph{top branch}.
+    \item Quarks are detected as jets.
+    \item More jets than four can be detected, because of gluon jets.
+    \item Less jets than four can be detected, because two or more jets can overlap and be detected as one.
+\end{itemize}
+The second group consists of effects associated with the imperfection of the detector:
+\begin{itemize}
+    \item There are no sensors in the beam pipe\footnote{The pipe through which the beam of protons travels in Fig. \ref{atlas_detector_schematic}.} and particles produced in the decay can escape the detector's sensors in this direction.
+    \item Particles in the detector can overlap with each other and can be misidentified or one object can be identified as multiple particles. To avoid the latter, there is an overlap-removal procedure, where only certain particles are kept, as part of the detector simulation data processing \cite{overlap_removal}, so in our case this is taken care of, but still it remains a source of more uncertainty and error between the event generator and detector simulation data. 
+    \item Detector resolution defined by the ATLAS online glossary as the "\emph{measure of the accuracy of a detector measurement, e.g. of energy or spatial position}" \cite{detector_resolution}.
+\end{itemize}
+
+These effects present obstacles in the process of mass reconstruction. The above is not necessarily a complete list, rather a list of effects which were encountered during the work on this thesis.
+
+\section{ROOT}
+ROOT is a framework for working with data created at CERN. Natively, it can be used to write and run C++ programs with the built-in Cling interpreter, but it can also be used with Python through the PyROOT library. It can be used for storing and accessing data in a tree-like structure and plotting or other processing of data \cite{about_root}.
+
+An example of the structure of data stored in a ROOT file is on Figure \ref{ROOT_structure}.
+
+\begin{figure}[h]
+\centering{
+\resizebox{115mm}{!}{\includegraphics{images/root_diagram.pdf}}
+\caption{Root file diagram} 
+\label{ROOT_structure}
+}
+\end{figure}
+
+\section{Provided datasets and selections}
+\label{datasets_selections}
+In this thesis two datasets provided by the ATLAS collaboration were used.
+
+The first one contains data of the full ATLAS detector simulation (\emph{detector available}) as well as the event generator (\emph{truth}) level. It consists of multiple ROOT files each containing events from either $t\overline{t}H$, $t\overline{t}Z$, $t\overline{t}W$ or $t\overline{t}$ production. The total number of available events in each of the named productions is in the \emph{All events} column of Table \ref{num_events}. The individual file of these productions are then further separated based on the decay of the top quarks — as mentioned in Section \ref{signal_background}, we will be mostly using the data of the \emph{lepton+jets} decay (Eq. \ref{tt_decay}) of the top quarks.
+
+The events in the dataset were generated with a Monte Carlo generator and the detector simulation is based on Geant4 \cite{geant}.
+
+As discussed in Section \ref{signal_background}, in this thesis we are focusing on the $2lSS + 1 \tau _{had}$ decay channel. Each event contains a detector available boolean variable indicating whether the event is of this specific channel. This variable is computed by requiring the event data to meet some conditions and as it relies on the detected objects, it is not always correct. In addition to that, we will be making a selection of events with at least three detected jets and at least one detected b jet, which is also made based on detector available variables. Making these selections allows for the data that we work with to be more consistent.
+
+
+
+The number of events after the application of the selections is in Table \ref{num_events}.
+
+\begin{table}[h]
+\begin{ctucolortab}
+\begin{tabular}{ R{2.5cm} | R{2.5cm} R{2.5cm} R{3.2cm} } 
+    \toprule
+    Production          &All events    &Selected events  &Percentage selected       \\
+    \midrule
+    $t\overline{t}H$    &1 055 628   &73 741   &6.99\%        \\
+    $t\overline{t}Z$    &1 894 217   &32 108   &1.69\%           \\
+    $t\overline{t}W$    &614 984     &13 295   &2.16\%            \\
+    $t\overline{t}$     &252 225     &6 027    &2.39\%            \\
+    \midrule
+    Total               &3 819 054   &125 171   &3.28\%            \\
+    \bottomrule
+\end{tabular}
+\end{ctucolortab}
+\caption[Number of events]{Number of events \par\small Number of all events for each production and number of selected events. The selection requires the event to have the $2lSS + 1 \tau _{had}$ decay channel tag and to have at least three detected jets with at least 1 b jet. These selections are based on detector available variables.}
+\label{num_events}
+\end{table}
+
+In the next chapter additional selections based on truth information will be introduced on top of the ones mentioned here.
+
+%The numbers in \textcolor{red}{the second row} of Table \ref{num_events} are equal to the number of events we will be working with as we do not require any further criteria to be met.
+
+The selected events were further split into three separate datasets for training, validation and testing of the neural networks. The ratio of the split was 0.8, 0.1 and 0.1 respectively.
+
+The second dataset contains real ATLAS data and as such it cannot be separated into the different productions, but instead it contains all of them. What can still be used, are the detector available selections of $2lSS + 1 \tau _{had}$ channel and of the required number of three detected jets with one b jet.
+
+The number of expected events of the different productions with this selection can be approximated and the value are listed in Table \ref{production_ratios}.
+\begin{table}[h]
+\begin{ctucolortab}
+\begin{tabular}{ R{4cm} R{4cm}  } 
+    \toprule
+    Production          &Events           \\
+    \midrule
+    $t\overline{t}H$    &22.8            \\
+    $t\overline{t}Z$    &18.2           \\
+    $t\overline{t}W$    &24.8            \\
+    $t\overline{t}$     &22.2            \\
+    Other               &17.9            \\
+    \midrule
+    Total               &105.9            \\
+    \bottomrule
+\end{tabular}
+\end{ctucolortab}
+\caption[Number of expected events of productions in real ATLAS data]{Number of expected events of productions in real ATLAS data \par\small The values were provided by my supervisor.}
+\label{production_ratios}
+\end{table}
+
+The real data was produced in the years 2015-2018. The number of events obtained each year is in Table \ref{}.
+
+\begin{table}[h]
+\begin{ctucolortab}
+\begin{tabular}{ R{4cm} R{4cm}  } 
+    \toprule
+    Year of production          &Events           \\
+    \midrule
+    2015        &\num{4.04e+06}            \\
+    2016        &\num{4.04e+07}          \\
+    2017        &\num{5.28e+07}            \\
+    2018        &\num{6.93e+07}            \\
+    \midrule
+    Total                   &\num{1.63e+08}            \\
+    \bottomrule
+\end{tabular}
+\end{ctucolortab}
+\caption[Number of expected events of productions in real ATLAS data]{Number of expected events of productions in real ATLAS data \par\small The values were provided by my supervisor.}
+\label{production_ratios}
+\end{table}
+
+\subsection{Used variables}
+Here is an overview of the ROOT variables we will be using in the mass reconstruction and the particle assignment process. The chosen variables are closely related to the $2lSS + 1 \tau _{had}$ decay channel, specifically to the final state particles in this decay (see Fig. \ref{decay_channel}).
+
+The detector available variables we will be using are the following:
+
+\begin{itemize}
+    \item The $2lSS + 1 \tau _{had}$ decay channel tag and variables indicating the number of detected jets and b jets.
+    \item Four-vectors of up to eight jets (the number differs in each event based on how many have been detected by the detector).
+    \item For each jet a \emph{b-tag} which indicates how likely is the jet coming from a b quark based on characteristics such as "\emph{large mass}" or "\emph{significant lifetime}" \cite{b-tags}.
+    \item Four-vectors of two leptons.
+    \item Four-vector of a hadronically decayed tau.
+    \item The decay mode of the hadronically decaying tau (either 1-prong or 3-prong\footnote{Decays into 1 or 3 charged particles.}).
+    \item Missing transverse energy characterized by its energy and azimuthal angle.
+    \item The sum of the total visible transverse energy (a scalar variable).
+    
+\end{itemize}
+
+Variables listed above are stored as scalars (e.g. each four-vector is stored in the form of four separate scalar variables).
+
+The truth data on the other hand includes information of each particle occurring in an event. It is stored in the form of eight vectors for each event containing pt, eta, phi, E, ID, particle type, parent and children relations. The last mentioned is a vector of vectors as a particle can decay into multiple particles. Each particle is represented by an index at which the vectors can be accessed to obtain the particle's information.
+
+%*-*-*-*-*-*-*-METHODS-*-*-*-*-*-*-*-*
+\chapter{Proposed methods}
+\section{Task at hand}
+\label{task_at_hand}
+The task at hand is to reconstruct the mass of the Higgs boson from the data produced by the ATLAS detector simulation on a per-event basis. First, the data has to be preprocessed — jets and leptons have to be assigned to their corresponding positions in the decay, so that the data is organized. Figure \ref{pipeline_main} shows a simplified diagram of the described task.
+
+\begin{figure}[h]
+\centering{
+\resizebox{110mm}{!}{\includegraphics{images/pipeline_main.pdf}}
+\caption{Simplified diagram of the task pipeline} 
+\label{pipeline_main}
+}
+\end{figure}
+
+For both the particle assignment and the mass reconstruction a neural network will be used. For the first mentioned, a classification NN based approach inspired by the paper on jet-parton assignment in $t\overline{t}H$ events cited at \cite{parton_assignment}, and for the latter a regression NN. For the rNN, three loss functions will be developed, each representing a different approach to the mass reconstruction.
+
+We will be training and testing the NNs on three selections of the simulated data, which are based on truth information and are illustrated in Figure \ref{data_selections}. More precisely, the particle assignment NN will be trained only on the \emph{Narrow selection} in (a) in the figure, because it requires a consistent structure of the decay across all events, which is precisely what the Narrow selection ensures. A mass reconstruction NN will then be trained and tested on each of the three selections.
+
+The choice of selections (a) and (b) is based on having the narrowed down decay of the $t\overline{t}H$ and $t\overline{t}Z$, that allows us to rely on the exact structure of the channel (Fig. \ref{decay_channel}), allowing for the assignment of all the jets and leptons. In addition to that, in the \emph{Additional backgrounds selection} in (b) there is also the $t\overline{t}W$ and $t\overline{t}$ background, which cannot have the top pair decay and Higgs/Z boson decay cuts applied to it, since their decay channels are different (e.g. the W never decays into $\tau\;\tau$), so we opt to take all the data.
+
+The \emph{Real data selection} in (c) simulates the real ATLAS data structure, where the productions cannot be distinguished, therefore we take all of the data, without any truth-based selections.
+
+All three of these sets will be using the common selection of requiring the $2lSS + 1 \tau _{had}$ channel tag to be true and at least three detected jets with one b jet, which has been discussed in Sec. \ref{datasets_selections}. This selection will also be applied to the real ATLAS data, on which we will test the NN trained on dataset (c) from the figure.
+
+\begin{figure}[h]
+\centering{
+%\resizebox{115mm}{!}{\includegraphics{images/data_selections_1.pdf}}
+%\resizebox{115mm}{!}{\includegraphics{images/data_selections_2.pdf}}
+%\resizebox{115mm}{!}{\includegraphics{images/data_selections_3.pdf}}
+\resizebox{115mm}{!}{\includegraphics{images/data_selections_updated.pdf}}
+\caption[Three data selections used with the NNs]{Three data selections used with NNs \par\small In red is the selected data and in black are the cuts made for each selection. The \emph{Narrow selection} is in (a) as described in Section \ref{datasets_selections}. In (b) additional background is added in the form of $t\overline{t}W$ and $t\overline{t}$ productions. Selection simulating the real ATLAS data is in (c), where truth information cannot be used, therefore the data cannot be separated on the conditions in the figure. The selection of $2lSS + 1 \tau _{had}$ channel and at least three jets with one b jet detected is used with all three (not shown in the picture).}
+\label{data_selections}
+}
+\end{figure}
+
+The number of events for the Narrow selection in Figure \ref{data_selections} is in the Table \ref{narrow_events}. The number of events without applying the top pair and Higgs/Z boson decay selection (i.e. Real data selection in the figure) has already been stated in column \emph{Selected events} in Table \ref{num_events}, but will be repeated here in Table \ref{narrow_events} under the column \emph{Real data selection}.
+
+\begin{table}[h]
+\begin{ctucolortab}
+\begin{tabular}{ R{2.5cm} | R{2.5cm} R{2.8cm} R{3.2cm} } 
+    \toprule
+    Production          &Real data selection    &Narrow selection   &Percentage narrow      \\
+    \midrule
+    $t\overline{t}H$    &73 741   &18 124   &24.58\%        \\
+    $t\overline{t}Z$    &32 108   &10 886   &33.90\%           \\
+    $t\overline{t}W$    &13 295   &-   &-        \\
+    $t\overline{t}$     &6 027   &-   &-           \\
+    \midrule
+    Total               &125 171  &29 010   &23.18\%            \\
+    \bottomrule
+\end{tabular}
+\end{ctucolortab}
+\caption[Number of events after selection]{Number of events after selection \par\small \emph{Wide selection} comprises of all events with the $2lSS + 1 \tau _{had}$ channel and at least three jets with one b jet. \emph{Narrow selection} is obtained by applying the requirement of $\tau\;\tau$ Higgs (or Z) decay and lepton+jets $t\bar{t}$ decay on the wide selection. Wide selection only uses detector available variables, while the narrow selection requires truth information.}
+\label{narrow_events}
+\end{table}
+
+\subsection{Data extraction code}
+The Python code used for data extraction from ROOT ntuples to a format fit for the particle assignment NN is in the directory \path{/source_code/root_data_extraction}. It produces all three of the selections in Fig. \ref{data_selections}.
+
+In the same directory is also the Python script for extraction of selected events from the real ATLAS dataset.
+
+\section{Data augmentation}
+\label{sec:data_aug}
+Data augmentation is a technique used in machine learning to avoid overfitting and to achieve better generalization of a NN on a dataset \cite[p.335]{data_augmentation}. It is commonly used in convolutional neural networks in the way of altering (e.g. rotating, translating or squeezing) an image used as an input for the network. The principle of generating altered data, that could possibly occur in the original dataset (i.e. it follows the original data distribution) can be transferred to our case as well.
+
+We can make use of the rotational symmetry of the detector about the beam pipe — the azimuthal symmetry \cite{symmetry}. While the symmetry is not perfect, as the detector is not fully homogeneous, it is still a valuable tool which brings us the benefits mentioned above.
+
+\begin{figure}[h]
+\centering{
+\resizebox{80mm}{!}{\includegraphics{images/rot_sym.png}}
+\caption[Picture of the detector with a coordinate system]
+{Diagram of the detector with a coordinate system \par\small Source of the image is Fig. 4.5 in \cite{rotational_symmetry_diagram}.}
+\label{rot_sym}
+}
+\end{figure}
+
+Before being used as an input for the NN, each event will have its particles rotated about the beam pipe axis. This way the overall number of events stays the same, but the events differ across epochs. In practice this is achieved by changing the azimuthal angle of the particles by the same random value:
+\begin{equation}
+    \bm{\phi}' =  \bm{\phi}+\bm{\Delta\phi},
+\end{equation}
+where $\bm{\phi}$ is a vector of the azimuthal angles of the original particles in an event, $\bm{\phi}'$ is the vector of the azimuthal angles of augmented particles and $\bm{\Delta\phi} = (\Delta\phi,\Delta\phi,...)^T$ is a vector with the repeated value $\Delta\phi \in [0,2\pi)$, which is randomly generated for each event.
+
+As we immediately input the $\phi'$ into a goniometric function to compute the momentum (Eq. \ref{goniometrix}), we do not require $\phi' \in [0,2\pi)$.
+
+\section{Particle assignment neural network}
+\label{sec:p_a_big}
+For the reconstruction of the Higgs boson mass we will be using a regression neural network. As input for the network, we want to use data organized in a way where we distinguish between two particles of the same type but coming from different parent particles. Another way to put it is, that we want to pair the positions at the decay diagram (Fig. \ref{decay_channel}) with the corresponding detected particles or that we want to assign each jet and lepton to one of the three decay branches (i.e. top, antitop and Higgs (or Z) branch).
+
+The information that would allow us this (i.e. the information of the child-parent relations between particles) is unavailable in the detector as has been discussed in Sec. \ref{detector_effects}. This means that to organize the data of an event, we will have to choose one out of many possible ways the particles can be assigned to their positions. In this thesis, we call this process the particle assignment or particle association.
+
+There are two types of particles that have to be assigned — jets and leptons. For the task of particle assignment, our goal is to create a program which takes the raw ROOT data of an event on input and outputs data with jets and leptons ordered correspondingly to their positions. 
+
+The proposed approach is a classification neural network, which for each event takes in each possible permutation of jets and leptons at different positions and outputs the respective probabilities of each of the positions being assigned correctly. The most likely assignment is then chosen from the permutations as the one with the largest product of the respective probabilities.
+
+This process is schematized on Figure \ref{pipeline_p_a} which expands on Figure \ref{pipeline_main}.
+
+The inspiration for using permutations as input for the neural network comes from the paper \cite{parton_assignment} mentioned in Section \ref{task_at_hand}.
+
+\begin{figure}[h]
+\centering{
+\resizebox{125mm}{!}{\includegraphics{images/pipeline_particle_ass.pdf}}
+\caption[Diagram of the particle assignment process]
+{Diagram of the particle assignment process \par\small First the ROOT data of an event has all possible permutations of the assignment of leptons and jets generated. The permutations are then processed by the (trained) NN, which assigns a score vector with five values to each permuation. The permutation with the highest product of the individual values is then chosen as the best particle assignment of the event. The event is then ready to have its mass reconstructed.}
+\label{pipeline_p_a}
+}
+\end{figure}
+
+\subsection{Lepton and jet permutations}
+Looking at the decay diagram (Fig. \ref{decay_channel}) we distinguish two lepton positions — one lepton originating from the tau and one lepton originating from the top. Together with the fact that the detector usually detects exactly two leptons, this gives us two possible permutations for each event.
+
+For the jets we distinguish three positions. Two of them are the b jets coming from the top and anti-top respectively. The third one is the sum of the two non-b jets (effectively the W boson that the non-b jets come from, for this reason we will call it the top W), as we do not distinguish between these two, as their positions are interchangeable\footnote{We however still keep their separate four-vectors so as to not lose any information.}. The number of jet permutations can be quite substantial, depending on the number of detected jets (up to eight).
+
+The number of permutations $P$ of an event with two leptons and $n$ detected jets is
+\begin{equation}
+    P = 2\cdot\frac{n(n-1)}{2}\cdot(n-2)(n-3),
+\label{eq:perms}
+\end{equation}
+where $\frac{n(n-1)}{2}$ is the number of combinations for the W jet pair and $(n-2)(n-3)$ is the number of permutations of the two b jets.
+
+The numbers of permutations of an event for different numbers of jets, obtained by application of the Eq. \ref{eq:perms}, are in Table \ref{num_permutations}.
+
+\begin{table}[h]
+\begin{ctucolortab}
+\begin{tabular}{ R{4.4cm} | R{1cm} R{1cm} R{1cm} R{1cm} R{1cm}  } 
+    \toprule
+    Jets     & 4      & 5           & 6  &7       &8            \\
+    
+    Permutations      & 24      & 120           & 360  & 840       & 1680        \\
+    \bottomrule
+\end{tabular}
+\end{ctucolortab}
+\caption{Number of event permutations in relation to number of jets}
+\label{num_permutations}
+\end{table}
+
+The total number of permutations, generated from the events of selection (a) from Figure \ref{data_selections}, which are the events we will be training and testing the particle assignment NN on, is in Table \ref{tab:tot_permutations}.
+
+\begin{table}[H]
+\begin{ctucolortab}
+\begin{tabular}{ R{3.0cm} | R{3.0cm} R{3.0cm} } 
+    \toprule
+    Production          &Events    &Permutations     \\
+    \midrule
+    $t\overline{t}H$    &18 124   &4 294 080       \\
+    $t\overline{t}Z$    &10 886   &4 000 152              \\
+    \midrule
+    Total               &29 010   &8 294 232         \\
+    \bottomrule
+\end{tabular}
+\end{ctucolortab}
+\caption[Number of permutations]{Number of permutations \par\small The number of permutations generated from the events separated into the two distinct productions. The number of events stated is identical to the numbers in column \emph{Narrow selection} in Table \ref{narrow_events}.}
+\label{tab:tot_permutations}
+\end{table}
+
+\subsection{Applicability}
+\label{sec:apllicab}
+As the particle assignment relates closely to the exact structure of the decay, it is important to note that it can only be applied on the Narrow selection from Fig. \ref{data_selections}. This selection will be used for the training and testing of the CNN.
+
+Events of the other productions ($t\overline{t}W$ and $t\overline{t}$) and the differently decaying events of $t\overline{t}H$ and $t\overline{t}Z$ (e.g. the top quarks can both decay leptonically; the Higgs can decay into a pair of W bosons instead of taus etc. — these are the events we have removed by using the Narrow selection) will not be used in the evaluation of the CNN. But as we will use them in the mass reconstruction, these events will, in the end, also go through the particle assignment, even though it will be ineffective.
+
+This is an unavoidable issue, because there is too many different productions and ways for them to decay, to have one united way of particle assignment. A possible different approach, would be organizing the particles in an entirely different way than by the positions in the decay. We have decided for the described approach, because our main focus is the narrow selection.
+
+
+%As we noted in Sec. \ref{signal_background} the $t\overline{t}H$ and the $t\overline{t}Z$ can both decay into a pair of taus, as is illustrated in Fig. \ref{decay_channel}. The events which follow this decay (i.e. (a) in Fig. \ref{data_selections}) will be used to train the particle assignment NN.
+
+%But there are also other background productions, most notably the $t\overline{t}W$ and $t\overline{t}$, which decay differently (e.g. the W boson cannot decay into a tau-tau pair as has been discussed in \ref{signal_background}). Additionally, even the $t\overline{t}H$ and $t\overline{t}Z$ can decay in different ways (e.g. the top quarks can both decay leptonically; the Higgs can decay into a pair of W bosons instead of taus etc. — these are the events we have removed by using the narrow selection in (a) in Fig. \ref{data_selections}). For these events will the particle assignment be less effective or not effective at all.
+
+\subsection{Features}
+\label{assignment_features}
+There are 70 features on the input of the particle assignment NN. Most of them are the momentum and energy of final state particles (i.e. their four-vectors) and also their masses and angular distances calculated from these four-vectors (the equations for these calculations are in Section \ref{mass_deltar_equations}). The full list of variables, grouped by the physical nature of the variables, with names of the particles based on their origin particle (e.g. anti-top lepton is the lepton originating from the anti-top), is following.
+\begin{itemize}
+    \item Four-vectors ($p_X$, $p_Y$, $p_Z$, $E$)$^T$ of detected particles which are the top b jet, anti-top b jet, both top non-b jets, Higgs boson hadronically decaying tau\footnote{By this, we do not mean the tau itself, but rather the hadrons coming from the tau, which are detected.} (Higgs tau), Higgs boson lepton and anti-top lepton.
+    \item Four-vectors of intermediate particles of the decay, created by addition of selected particles from previous paragraph. Specifically the top W boson (sum of top non-b jets), top quark (sum of top b jet and top W boson), visible part of the Higgs boson (sum of Higgs tau and Higgs lepton) and visible part of the anti-top quark (sum of anti-top b jet and anti-top lepton).
+    \item The mass of each detected particle or intermediate particle mentioned above.
+    \item The angular distance between selected pairs of particles, the focus being primarily on the particles that are being assigned (the jets and the leptons). The pairs are the Higgs tau and Higgs lepton, the Higgs tau and anti-top lepton, the anti-top b jet and Higgs lepton, the anti-top b jet and anti-top lepton, the two top non-b jets, the top b jet and top W boson and, finally, the top quark and the anti-top quark.
+    \item For each of the four jets a \emph{b-tag}, which indicates how likely is the jet coming from a b quark.
+    \item Missing transverse energy characterized by its $\cancel{E}_{T_X}$ and $\cancel{E}_{T_Y}$ components.
+    \item The scalar sum of the total visible transverse energy and the scalar sum of the transverse energy of all detected jets.
+    \item The number of jets with energy over 25 GeV.
+    \item Lastly the decay mode of the hadronically decaying tau.
+\end{itemize}
+Inspiration in the choice of the features was in the thesis of Petr Urban \cite{decay_channel_image} and the MMC, as the last three items on the list are variables also used in there. We will be using the same features in the mass reconstruction NN as well.
+
+It should also be emphasized, that the names of the particles in the above list refer to the positions, not to the actual particles assigned to them, because finding the correct particles to assign to the positions is the task at hand.
+
+\subsection{Labels}
+Each permutation is labeled with a vector 
+\begin{equation}
+\begin{aligned}
+l &= (a_{b1}, a_{b2}, a_{W}, a_{l1}, a_{l2}), \\
+a_{p} &= \left\{
+\begin{array}{ll}
+      1, & \text{if particle at position $p$ is assigned correctly,}\\
+      0, & \text{if particle at position $p$ is assigned incorrectly,}\\
+\end{array} 
+\right.
+\end{aligned}
+\label{labels_equation}
+\end{equation}
+$$\text{where } p \in \{b1, b2, W, l1, l2\} \text{ is one of the five positions we are assigning to.}$$
+
+The label for a permutation is created by comparing the assigned particle to the correct particle for that position, which is known from the truth information of the event, which is available in the dataset. As the particle is not detected perfectly, the detected and true particle have to be compared on some criteria to determine, whether they can be paired and the detected particle assigned to the position.
+
+The criteria on which we compare this pair to decide, whether the assignment is correct, is the angular distance between the two \cite[p.6]{parton_assignment}:
+
+\begin{equation}
+\begin{aligned}
+a_{l}= \left\{
+\begin{array}{ll}
+      1, & dist(l_{true},l_{assigned}) \leq 0.12, \\
+      0, & dist(l_{true},l_{assigned}) > 0.12, \\
+\end{array} 
+\right. \\
+a_{b}= \left\{
+\begin{array}{ll}
+      1, & dist(b_{true},b_{assigned}) \leq 0.32, \\
+      0, & dist(b_{true},b_{assigned}) > 0.32, \\
+\end{array} 
+\right. \\
+a_{q}= \left\{
+\begin{array}{ll}
+      1, & dist(W_{true},W_{assigned}) \leq 0.32, \\
+      0, & dist(W_{true},W_{assigned}) > 0.32, \\
+\end{array} 
+\right.
+\end{aligned}
+\end{equation}
+$$\text{where }dist(p_1,p_2) \text{ symbolizes the angular distance between two particles.}$$
+
+As the W position is a sum of two non-b jets (symbol $q$), we compare the two jets and if both meet the distance condition the W is labeled as correctly assigned.
+
+The right-side threshold values of the angular distances were obtained from experimental results, as values that separate the two distributions of correctly and incorrectly assigned particles such as in Fig. \ref{deltar_separation}. These distributions become apparent once we plot the distances between all possible b jet combinations and the separation value is then selected.
+
+\begin{figure}[h]
+\centering{
+\resizebox{85mm}{!}{\includegraphics{images/deltar_1.pdf}}
+\caption[Delta R separation of correctly and incorrectly paired b jets]
+{Delta R separation of correctly and incorrectly paired b jets \par\small Data used was a combination of $t\overline{t}H$ and $t\overline{t}Z$. All possible pairs were made for each event and the angular distance was calculated. By plotting the distances in a histogram a value is chosen to separate the two distributions that become apparent.}
+\label{deltar_separation}
+}
+\end{figure}
+
+\subsection{Architecture and hyper-parameters}
+\label{sec:pa_architecture}
+The inspiration for the architecture stems from paper on jet-parton assignment \cite{parton_assignment}. Changes were made to the output and the exact architecture and hyper-parameters were adjusted for our task. 
+
+ The NN consists of multiple fully connected layers with ReLU activation functions. Dropout layers and data augmentation are used to reduce overfitting on the training data. Furthermore, L2 regularization was used on all weights \cite[p.182]{data_augmentation}:
+
+\begin{equation}
+    \mathcal{L}' = \mathcal{L} + \lambda \cdot \sum_{i=0}^{d} w_i^2,    
+\end{equation}
+where $\mathcal{L}$ is the old loss function (in this case the binary crossentropy) $\mathcal{L}'$ is the loss function with regularization, $\lambda$ is the regularization parameter and $\sum w^2$ is the sum of the weights squared. 
+ 
+ Skip connections are used to accelerate the learning process \cite{parton_assignment}. A diagram of the NN architecture is shown in Figure \ref{p_a_schematics}.
+
+\begin{figure}[h]
+\centering{
+\resizebox{100mm}{!}{\includegraphics{images/particle_assignment_schematics.pdf}}
+\caption{The particle assignment neural network diagram} 
+\label{p_a_schematics}
+}
+\end{figure}
+
+The exact specifications of the NN are in Table \ref{p_a_specifications}. 
+
+\begin{table}[h]
+\begin{ctucolortab}
+\begin{tabular}{  R{4.2cm} | R{4.2cm}  } 
+    \toprule
+    Number of inputs         & 71      \\ 
+    Number of outputs        & 5       \\ 
+    Learning rate            & 0.0003  \\ 
+    Optimizer                & Adam    \\ 
+    Dropout rate             & 0.2     \\ 
+    Dense layer neurons      & 500     \\
+    Hidden layers activations & ReLU    \\ 
+    Output layer activation  & Sigmoid \\
+    \bottomrule
+\end{tabular}
+\end{ctucolortab}
+\caption{Specifications of the particle assignment CNN}
+\label{p_a_specifications}
+\end{table}
+
+Learning rate step decay was used to make the training process smoother \cite[p.136]{data_augmentation}:
+
+\begin{equation}
+    \alpha_t = \alpha_0 \cdot 0.99^{t},    
+\end{equation}
+where $t$ is the number of the epoch and $\alpha_0$ is the initial learning rate.
+
+The loss function is the binary cross entropy (Eq. \ref{bce}). Since we are outputting five values we calculate it for each output and the loss is then their weighted mean. The mean has to be weighted, because the five outputs each have a different ratio between the total number of zeros and ones in their respective labels across all samples (imbalanced classification). For the leptons, where in the vast majority\footnote{Not always because of the detector effects which can (very rarely) cause for example one of the leptons to be detected poorly.} of cases there is one correct and one incorrect permutation the classification can be considered balanced. For the jets, on the other hand, there are usually multiple contenders but only one of them is correct, this leads to more zero labels than ones.
+
+This unbalance of the label classes (zero corresponding to incorrect assignment and one corresponding to correct assignment) has to be offset, for which weights in the binary cross entropy are used. These are calculated from the exact ratio of the classes for each output separately (Table \ref{Tab:p_a_weights}):
+\begin{equation}
+    \begin{aligned}
+        b_p^0 &= \sum_{k=1}^n a_{p_k}, \\
+        b_p^1 &= \sum_{k=1}^n 1-a_{p_k}, \\
+        w_p^0 &= \frac{2b_p^0}{b_p^0+b_p^1}, \\
+        w_p^1 &= \frac{2b_p^1}{b_p^0+b_p^1}, \\
+    \end{aligned}
+\end{equation}
+where $n$ is the number of events, $a_{p_k}$ is the label of position $p$ of $k$-th event, $b_p^0$ is a helper variable equal to the number of labels with 0 and $w_p^0$ is the weight for class 0 for the position $p$ being assigned to. The equations are designed for the sum of the two class labels to be two:
+\begin{equation}
+        w_p^0 + w_p^1 = 2, \;\;\;\; \forall p.
+\end{equation}
+
+\begin{table}[h]
+
+\begin{ctucolortab}
+%\begin{tabular}{ R{1.0cm} | R{1.6cm}  R{2.3cm} R{1.2cm}  R{1.8cm}  R{2.5cm}  } 
+%    \toprule
+%    class & top b jet & anti-top b jet & top W & tau lepton & anti-top lepton \\
+%    \midrule
+%    1      & 1.72      & 1.72           & 1.85  & 1.02       & 1.03            \\
+%    
+%    0      & 0.28      & 0.28           & 0.15  & 0.98       & 0.97        \\
+%    \bottomrule
+%\end{tabular}
+\begin{tabular}{ R{3.0cm}  R{3.0cm}  R{3.0cm} } 
+    \toprule
+      Particle  & Class 0  & Class 1    \\
+    \midrule
+    Top b jet       & 0.28  & 1.72      \\
+    Anti-top b jet    & 0.29 &  1.71    \\
+    Top W &   0.07           &  1.93    \\
+    Tau lepton    & 0.98     & 1.02     \\
+    Anti-top lepton   & 0.99  & 1.01    \\
+    \bottomrule
+\end{tabular}
+\end{ctucolortab}
+\caption{Weights used in the loss function of the particle assignment CNN}
+\label{Tab:p_a_weights}
+\end{table}
+
+\subsection{Particle assignment code}
+The Jupyter notebook for the training of the particle assignment NN is at \path{/source_code/particle_assignment/particle_assignment_}\linebreak\path{training.ipynb}. The code trains on the data of the Narrow selection (Fig. \ref{data_selections}) extracted from the ROOT ntuples.
+
+To choose the best permutation for each event and thus process the data for the mass reconstruction the Jupyer notebook at \path{/source_code/particle_assignment/particle_assignment_training.ipynb} can be used.
+
+A trained NN is also included in directory \path{/source_code/trained_NN_models}.
+
+\section{Mass reconstruction neural network}
+\label{sec:mass_reco}
+As has been stated in Sec. \ref{task_at_hand}, for the mass reconstruction a regression neural network will be used. The data on which the NN will be trained and tested will be the three selections of Fig. \ref{data_selections}, with the data processed by the particle assignment NN. The particle assignment is only effective for the Narrow selection from the figure. For the other two wider selections from the figure, we will use the same particle assignment NN, although it will be mostly ineffective, as the decay channels of the events added by these wider selections are different. In the approach we have chosen, we do not have a better method to assign the particles of these added events.
+
+The MMC (Sec. \ref{sec:mmc}) will serve as a comparison for the NN. An MMC library from \emph{Athena} (described as "the \emph{ATLAS Experiment's main offline software repository}" \cite{athena_git}) has been provided by the supervisor. The library has been used in our script with the \emph{2015 calibration set} and the data used with the MMC was the same as for the NN, which means, it was also processed by our particle assignment NN (the MMC requires only the assignment of leptons).
+
+The C++ code for our implementation of a script that uses the MMC library is in the directory \path{/source_code/MMC}, where are also the Jupyter notebooks for evaluating the reconstructed mass data of the MMC.
+
+\subsection{Mass reconstruction goal}
+The goal of the mass reconstruction is to predict the mass of the desired particle. For the signal ($t\overline{t}H$) events this particle is the Higgs boson and for the background events this particle is the Z boson for $t\overline{t}Z$, the W boson for $t\overline{t}W$ and for the $t\overline{t}$ we will ideally predict a zero mass, as there is no particle to be reconstructed\footnote{We could reconstruct the leptonically decaying top quark, but that would be inconsistent with the other productions, where we also could reconstruct the top quark, but we do not, as we reconstruct a different particle.}.
+
+The values to which we will be comparing the predicted masses will be calculated from the truth information that is present in the simulated dataset. The masses calculated this way are not exactly equal to the known constant masses but have a negligible variance, which is a property of the dataset we are working with. Another almost equivalent approach would be to take the constant invariant masses from Table \ref{masses}.
+
+\subsection{Loss function}
+\label{sec:loss_functions}
+We propose multiple possible approaches each requiring a different loss function to be used with the NN. When choosing an approach (and its loss function) we have to consider multiple things.
+
+We expect the NN to distinguish between the signal and the background and for the reconstructed masses to be close to their actual values.
+
+There is also the question of what background signals do we want the NN to be able to process. The MMC only works well with the $t\overline{t}H$ and $t\overline{t}Z$ productions, but in the real ATLAS data there are also other productions such as the $t\overline{t}W$ and $t\overline{t}$.
+
+The loss functions will use different labels, but each will be able to produce the reconstructed mass from its output.
+
+\subsubsection{MMC inspired loss}
+Inspired by the MMC, a loss function incorporating equations of the invariant mass of reconstructed particles and the MET. The NN outputs the predicted four-vectors of the four neutrinos. Then the masses of the neutrinos and also of particles, reconstructed by adding together the neutrinos and the visible particles (e.g. the neutrino and the lepton coming from the anti-top branch when added together make the anti-top W boson), are calculated by the formula Eq. \ref{masses_equation}. With four neutrinos, two W bosons, two taus, one Higgs and one top this gives us ten predicted masses.
+    
+The predicted MET is calculated from the addition of all four neutrinos and application of the formula Eq. \ref{met_equation}\footnote{Just without the negation, since in the formula we are summing the visible particles and here we are summing the undetected ones.}.
+
+To calculate the loss itself, we subtract each of the predicted masses from the known constant of the given particle (e.g. $\hat{m}_W-80.38$), square it and multiply it by a weight. We do the same with the MET. We then sum all of these terms to obtain the loss.
+
+The described loss can be written as 
+\begin{equation}
+    \mathcal{L}_{1} = \sum_{k=1}^{10} \alpha_k(m_{k}-\hat{m}_{k})^2 + \alpha_{11}(\cancel{E}_{T_X}-\hat{\cancel{E}}_{T_X})^2 + \alpha_{11}(\cancel{E}_{T_Y}-\hat{\cancel{E}}_{T_Y})^2.
+\label{mmc_inspired_loss}
+\end{equation}
+
+The weights are chosen in a way, that each part of the loss is approximately equal after the training has gone through some initial epochs:
+\begin{equation}
+    \alpha_1(m_{1}-\hat{m}_{1})^2 \approx \alpha_2(m_{2}-\hat{m}_{2})^2 \approx \dots
+\end{equation}
+The optimization of the weights has not been necessary, as even large perturbations, such as multiplying some weights by four and dividing others by four had negligible effect on the results of the trained network.
+
+We obtain the predicted Higgs boson four-vector by adding the neutrinos coming from the Higgs boson branch to the visible part of the Higgs decay \linebreak(a hadronically decaying tau and a lepton coming from the leptonically decaying tau):
+
+\begin{equation}
+    \hat{H} = \hat{\nu}_{\tau_{had}} + \hat{\nu}_{\tau_{lep}} + \hat{\nu}_\ell + \tau_{had} + \ell.
+\end{equation}
+
+The mass is calculated from the predicted Higgs boson four-vector with the use of Eq. \ref{masses_equation}.
+
+The applicability of this loss function is even stricter than of the MMC as it requires precisely the Narrow selection in Fig. \ref{data_selections} (MMC does not require the specific $t\overline{t}$ decay).
+
+%\subsubsection{Neutrinos MSE loss}
+%In this approach we use the same output as in the previous, that is the four neutrino four-vectors. The difference is that we do not train the neural network to follow the underlying physical equations, we simply let it learn to predict the four-vectors in its own way using the sum of the MSE of each output variable as the loss function (Eq. \ref{mse_neutrinos}).
+
+%\begin{equation}
+%\label{mse_neutrinos}
+%    \mathcal{L} = \sum_{k=1}^{4} (p_{x_k}-\hat{p}_{x_k})^2 + (p_{y_k}-\hat{p}_{y_k})^2 + (p_{z_k}-\hat{p}_{z_k})^2 + (E_{k}-\hat{E}_{k})^2,
+%\end{equation}
+
+%where $(p_{x_k},p_{y_k},p_{z_k},E_{k})$ is the true neutrino four-vector and \linebreak $(\hat{p}_{x_k},\hat{p}_{y_k},\hat{p}_{z_k},\hat{E}_{k})$ is the predicted and $k \in \{1,2,3,4\}$ symbolizes the four neutrinos.
+
+\subsubsection{Four-vector MSE loss}
+The output is the four-vector of the reconstructed particle (Higgs boson in $t\overline{t}H$, Z boson in $t\overline{t}Z$, W boson in $t\overline{t}W$, four-vector of zeros in $t\overline{t}$). From a good prediction of the four-vector, we would ideally obtain a good prediction of the mass. The used loss is MSE:
+
+\begin{equation}
+\label{mse_higgs}
+    \mathcal{L}_{2} = \frac{1}{4}[(p_{x}-\hat{p}_{x})^2 + (p_{y}-\hat{p}_{y})^2 + (p_{z}-\hat{p}_{z})^2 + (E-\hat{E})^2].
+\end{equation}
+
+The advantage of this loss function compared to the MMC is the option to use it on $t\overline{t}H$ and $t\overline{t}Z$ as well as $t\overline{t}W$ and $t\overline{t}$. This makes it useful even for the real ATLAS data, where these background productions occur.
+
+
+\subsubsection{Single output mass loss}
+The neural network outputs a single value equivalent to the reconstructed particle's mass. The difference between the predicted and truth value is then squared, which serves as the loss function:
+
+\begin{equation}
+\label{mass_loss}
+    \mathcal{L}_{3} = (m_0-\hat{m}_0)^2.
+\end{equation}
+
+Also this loss function can be used on $t\overline{t}H$ and $t\overline{t}Z$ as well as $t\overline{t}W$ and $t\overline{t}$.
+
+This loss is similar to what Petr Urban has used in his thesis \cite{decay_channel_image}. His work is mentioned in the points one and two in the assignment of my thesis. His NN code suffers from the issue that it has been trained and tested on $t\overline{t}H$ only. When training, the NN only encountered labels with values around the Higgs mass constant and when used on anything besides the $t\overline{t}H$, it would predict the same values no matter what would be on input (bias for the constant Higgs boson invariant mass). By including other productions in the training data we avoid this issue.
+
+\subsection{Features}
+The input features will stay the same as in Sec. \ref{assignment_features} with the addition of the output of the particle assignment NN added as five additional features for each event. The five additional features represent the probabilities of correct assignment and we use them to give the mass reconstruction NN the information of how well are the particles (which four-vectors are also on the input) assigned.
+
+\subsection{Architecture and hyper-parameters}
+The neural network will consist of a number of fully connected layers. The architecture optimization was done on the Narrow selection ((a) in Fig. \ref{data_selections}) and with the last mentioned loss function (mass loss). This selection and loss function were selected, as they were considered to be the most important, ideally we would adjust the architecture for each loss and each selection.
+
+Experiments with the specifics of the architecture were conducted and some of the results are in the tables \ref{appendix_first} through \ref{appendix_last} in Appendix A. The tables serve as more of an illustration of the differences between the architectures being insignificant, than as a rigid optimization process, as each record in the tables comes from only one iteration of the NN being trained and evaluated. The chosen architecture is schematized on Fig. \ref{m_r_schematics} with parameters per Table \ref{m_r_specifications}.
+\begin{figure}[h]
+\centering{
+\resizebox{105mm}{!}{\includegraphics{images/mas_reco_schematics.pdf}}
+\caption[The mass reconstruction neural network diagram]
+{The mass reconstruction neural network diagram \par \small The NN contains an input layer, five sequential fully-connected hidden layers and an output layer. Each fully-connected layer also includes a dropout layer.}
+\label{m_r_schematics}
+}
+\end{figure}
+
+\begin{table}[H]
+\begin{ctucolortab}
+\begin{tabular}{  R{4.2cm} | R{4.2cm}  } 
+    \toprule
+    Number of inputs         & 76      \\ 
+    Initial learning rate    & 0.0005  \\ 
+    Batch size               & 4096  \\ 
+    Optimizer                & Adam    \\ 
+    Dropout rate             & 0.2     \\ 
+    L2 regularization        & 0.001     \\ 
+    Dense layer neurons      & 720     \\
+    Hidden layers activations & ReLU    \\ 
+    Output layer activation  & Linear \\
+    \bottomrule
+\end{tabular}
+\end{ctucolortab}
+\caption{Specifications of the mass reconstruction NN}
+\label{m_r_specifications}
+\end{table}
+As with the particle assignment NN (Sec. \ref{sec:pa_architecture}), the same learning rate step decay was used.
+
+To reduce overfitting the same data augmentation (Sec. \ref{sec:data_aug}) was used as with the particle assignment. The effect of data augmentation on mass reconstruction is demonstrated in Table \ref{tab:appendix_augmentation} and Figure \ref{fig:appendix_augmentation} in Appendix A. L2 regularization was used on all weights to prevent overfitting on the training data. 
+\subsection{Mass reconstruction code}
+The Jupyter notebooks for the mass reconstruction NN, each containing the NN with one of the three loss functions can be found in the directory \path{/source_code/mass_reconstruction}. Each notebook contains both the training and evaluation process.
+
+Trained NN models are in the directory \path{/source_code/trained_NN_models}.
+
+%*-*-*-*-*-*-*-RESULTS-*-*-*-*-*-*-*-*
+\chapter{Results}
+
+\section{Particle assignment}
+\label{sec:p_a_results}
+A visualisation of the performance of the particle assignment NN on a test dataset is in Figure \ref{confusion_matrices}. The data in the test data set had the same properties as the data the NN was trained on, it was of the Narrow selection from Fig. \ref{data_selections} and each event was represented by all possible permutations of jets and leptons.
+\begin{figure}[h]
+\centering{
+\resizebox{125mm}{!}{\includegraphics{images/btags_cms_selection.pdf}}
+\caption[Particle assignment NN confusion matrices]%
+{Particle assignment NN confusion matrices \par \small Confusion matrices of the assignment of particles of the NN on a test dataset. Each event from the dataset is represented by all possible jets and leptons permutations.}
+\label{confusion_matrices}
+}
+\end{figure}
+
+The main metric measured in the particle assignment is the Matthews correlation (MCC) (Eq. \ref{matthews_formula}), which is a suitable metric for imbalanced classification problems \cite{matthews_article}.
+
+\begin{equation}
+    MCC = \frac{TP \cdot TN - FP \cdot FN}{\sqrt{(TP+FP)\cdot (TP+FN) \cdot (TN+FP) \cdot (TN+FN)}},
+\label{matthews_formula}
+\end{equation}
+where TP stands for the number of true positives, TN for true negatives, FP for false positives and FN for false negatives. The MCC expected value is 0 for random classification and 1 for perfect classification \cite{matthews_article}. The MCC obtained on the test dataset is in Table \ref{Tab:matthews}.
+
+\begin{table}[h]
+\begin{ctucolortab}
+\begin{tabular}{ R{4.0cm}  R{4.0cm}  } 
+    \toprule
+    Assigned particle & Matthews correlation \\
+    \midrule
+    Top b jet & 0.314 \\
+    Anti-top b jet & 0.442 \\
+    Top W & 0.232 \\
+    Tau lepton & 0.654  \\
+    Anti-top lepton  & 0.655   \\
+    \bottomrule
+\end{tabular}
+\end{ctucolortab}
+\caption{Particle assignment Matthews correlation}
+\label{Tab:matthews}
+\end{table}
+
+From the confusion matrices and the MCC we see, that the assignment of the leptons is more accurate than the assignment of the jets. This can be attributed to the fact, that leptons are detected better by the detector than the quarks which evolve into jets before being detected and also are less likely to be misidentified. Jets can also come from gluons, which further increases the uncertainity. Also, with the leptons we only choose one permutation out of two, while with the jets there are usually many more permutations to choose from. 
+
+Another point to notice is that while the assignment of the two leptons has very similar performance, the jet assignment performances differ between one another. The anti-top b jet seems to be the easiest of the three to assign, which can be explained by it being in the same branch of the decay as one of the leptons, while the top b jet and the top W boson are both coming from the same parent particle (Fig. \ref{decay_channel}). Since the lepton is assigned correctly in a large number of cases, it is then easier for the corresponding b jet to be chosen.
+
+The top W, which is in reality the two non-b jets which the W boson decays into, is the most difficult to assign, because if one of the two jets is poorly detected or misidentified, which is two times more likely than for the single b jet, the top W is then more difficult to reconstruct.
+
+What the confusion matrices and MCC do not show, is how well we are able to choose the best possible assignment out of all the permutations for each event. Out of all the permutations we choose the one with the largest product of the five output values:
+\begin{equation}
+    \argmax_{i}\prod_{p} \hat{a}_p^i,
+\label{product_label}
+\end{equation}
+
+where $i$ symbolizes the current permutation, $p \in \{b1, b2, W, l1, l2\}$ is the position being assigned to and $\hat{a}$ is the output of the neural network — that is the predicted probability of the particle being correctly assigned.
+
+We can then look at the rate with which the chosen assignment has the respective particles assigned correctly.
+
+It needs to be taken into account, that it is not always the case, that the best assignment has each particle assigned correctly (e.g. when a detected jet has been misidentified). To account for this, we calculate the mean of correct assignment of each position (MCA; symbol A) calculated as
+\begin{equation}
+    {A}_p = \frac{1}{n} \sum_{k=1}^n a_p^k,
+\end{equation}
+where $n$ is the number of events and $a^k$ is one if assigned correctly and zero otherwise (as in Eq. \ref{labels_equation}).
+
+In Table \ref{Tab:MCA} is the MCA per particle in the chosen permutation and in the best possible permutation (i.e. the one with the most correctly assigned particles) for $t\overline{t}H$ and $t\overline{t}Z$.
+
+\begin{table}[h]
+\begin{ctucolortab}
+\begin{tabular}{ R{3.0cm}  R{1.9cm} R{1.9cm} R{1.9cm}  R{1.9cm} } 
+    \toprule
+    \multirow{2}{*}{Assigned particle} & \multicolumn{2}{c}{MCA chosen} & \multicolumn{2}{c}{MCA best possible} \\
+    &$t\overline{t}H$ & $t\overline{t}Z$ & $t\overline{t}H$ & $t\overline{t}Z$ \\
+    \midrule
+    Top b jet           & 0.43 & 0.42 & 0.84 & 0.84\\
+    Anti-top b jet      & 0.57 & 0.53 & 0.85 & 0.86\\
+    Top W               & 0.20 & 0.18 & 0.50 & 0.48\\
+    Tau lepton          & 0.80 & 0.85 & 0.99 & 0.98\\
+    Anti-top lepton     & 0.80 & 0.86 & 0.99 & 0.99\\
+    \bottomrule
+\end{tabular}
+\end{ctucolortab}
+\caption[Particle assignment mean of correct assignment]
+{Particle assignment mean of correct assignment \par \small Separately for the chosen assignment and the best possible assignment in each event. Separated into $t\overline{t}H$ and $t\overline{t}Z$.}
+\label{Tab:MCA}
+\end{table}
+
+Additionally, by dividing the value of the chosen and best possible MCA,
+
+\begin{equation}
+    A^r_p = \frac{A^c_p}{A^b_p},
+\end{equation}
+
+we can obtain the relative MCA (Table \ref{Tab:MCA_relative}).
+
+\begin{table}[h]
+\begin{ctucolortab}
+\begin{tabular}{ R{3.0cm}  R{2.0cm} R{2.0cm}} 
+    \toprule
+    \multirow{2}{*}{Assigned particle} & \multicolumn{2}{c}{relative MCA} \\
+    &$t\overline{t}H$ & $t\overline{t}Z$ \\
+    \midrule
+    Top b jet           & 0.52 & 0.50\\
+    Anti-top b jet      & 0.67 & 0.62\\
+    Top W               & 0.40 & 0.38\\
+    Tau lepton          & 0.81 & 0.87\\
+    Anti-top lepton     & 0.81 & 0.87\\
+    \bottomrule
+\end{tabular}
+\end{ctucolortab}
+\caption{Particle assignment relative mean of correct assignment}
+
+\label{Tab:MCA_relative}
+\end{table}
+
+The above tables confirm that the leptons are assigned more accurately and that the anti-top b jet is easier to assign than the other jets. We can now also compare and see that the $t\overline{t}H$ has slightly worse lepton assignment than the $t\overline{t}Z$, which does not seem to have an obvious explanation, since the decay channels are the same. The only obvious difference between the two production is, that the Z boson is less massive than the Higgs boson, which could have an positive effect on the lepton assignment, as one of the leptons is coming from the Higgs/Z boson branch.
+
+A comparison was made between the above results and the paper \cite{parton_assignment}, which inspired the NN architecture and the use of permutations for the assignment task. A direct comparison is not possible, because the two differ in some very important aspects. Some of the major differences from the side of the paper are the $H \rightarrow b\:\overline{b}$ decay channel being analysed, not including any other production besides $t\overline{t}H$, having 700 000 events, the events selection being stricter and six jet positions being assigned to.
+
+The cited paper states, that in 52\% of cases it reconstructed the event perfectly \cite{parton_assignment}. We can calculate a similar metric, where we compare the chosen assignment to the best possible assignment and see if they have the same number of correctly assigned particles:
+
+\begin{equation}
+\arraycolsep=1.4pt\def\arraystretch{2.2}
+    r_{k}= \left\{
+    \begin{array}{ll}
+          1, \;\;\;\;\;\;& \sum\limits_{p} a_p^{c_k} \geq \sum\limits_{p} a_p^{b_k}, \\
+          0, \;\;\;\;\;\;& \sum\limits_{p} a_p^{c_k} < \sum\limits_{p} a_p^{b_k}, \\
+    \end{array} \right.
+\end{equation}
+
+where $r_k$ marks, if for the $k$-th event we have chosen the best possible assignment, and $\sum\limits_{p}$ is sum of the label of either the chosen ($a_p^{c_k}$) or the best possible ($a_p^{b_k}$) assignment for event $k$. Then we calculate the mean across all events and finally get the percentage of events in which the perfect assignment has been chosen as:
+\begin{equation}
+    R = 100\%\cdot \frac{1}{n} \sum_{k=1}^{n} r_k.
+\end{equation}
+
+On the test set this metric gives us:
+
+\begin{table}[h]
+\begin{ctucolortab}
+\begin{tabular}{R{2.0cm} R{2.0cm}} 
+    \toprule
+    \multicolumn{2}{c}{Perfectly assigned events} \\
+    $t\overline{t}H$ & $t\overline{t}Z$ \\
+    \midrule
+    32\% & 31\%\\
+    \bottomrule
+\end{tabular}
+\end{ctucolortab}
+\caption[Percentage of perfectly assigned events]
+{Percentage of perfectly assigned events \par \small Perfectly assigned event is an event in which a permutation that was chosen has the maximum possible number of correctly assigned particles.}
+\end{table}
+
+Compared to the paper's 52\%, our performance is worse, but as has been said a direct comparison does not make sense, since there are too many differences, it is rather to give a different perspective on the achieved performance. Some major differences have been already mentioned above, some of them cannot be dealt with (different decay channel, different productions, different particles being assigned), but what could be improved is the number of events the neural network is trained on, by obtaining a larger dataset, which could boost the performance.
+
+\section{Mass reconstruction}
+In Section \ref{task_at_hand} we have proposed three data selections and in Section \ref{sec:loss_functions} we have proposed three loss functions. We will first compare the loss functions on the Narrow selection from Fig. \ref{data_selections}, that is the selection comprising of only $t\overline{t}H$ and $t\overline{t}Z$ with the specified decay channel. In the comparison we will also include the MMC used on the same test dataset as the NNs. It is important to note, that using the same dataset implies, that not only the NN but also the MMC will be affected by the particle assignment, by which all the data was processed.
+
+In some of the events, the MMC does not produce a result as it does not find a solution for the equations \ref{mmc_eqs}. It might be in part because of the broken assumption of no neutrinos outside of the Higgs that does not apply to our channel, as has been discussed in \ref{sec:mmc}. Even though they are not shown in Fig. \ref{histo_losses}, the events which lead to the zero mass prediction are accounted for in Table \ref{metrics_losses}. The exact numbers for the unsolved events are in Table \ref{unsolved_mmc}, which includes not only the $t\overline{t}H$ and $t\overline{t}Z$ but also the other productions, which will be relevant later on.
+
+\begin{table}[h]
+\begin{ctucolortab}
+\begin{tabular}{R{3.0cm} R{3.0cm}} 
+    \toprule
+    Dataset & Unsolved events \\
+    \midrule
+    $t\overline{t}H$ narrow & 14.1\%\\
+    $t\overline{t}Z$ narrow & 17.6\%\\
+    $t\overline{t}W$ all    & 30.5\%\\
+    $t\overline{t}$ all     & 18.2\%\\
+    $t\overline{t}H$ all    & 23.2\%\\
+    $t\overline{t}Z$ all    & 19.9\%\\
+    \bottomrule
+\end{tabular}
+\end{ctucolortab}
+\caption[Percentage of unsolved events by the MMC]
+{Percentage of unsolved events by the MMC \par\small The first two rows in the table correspond to the currently discussed Narrow data selection ((a) in Fig. \ref{data_selections}), narrow meaning the selection of the exact structure of the decay channel of the productions made using the truth information. The remaining rows correspond to the selections without the truth-based requirement on the Higgs/Z or the top pair deacy from the same figure.}
+\label{unsolved_mmc}
+\end{table}
+
+The higher numbers in Table \ref{unsolved_mmc} for the $t\overline{t}W$ and $t\overline{t}$ can be attributed to the fact, that the MMC is not suited to reconstruct mass for these productions, as has been discussed in \ref{sec:mmc}. For the $t\overline{t}H$ and $t\overline{t}Z$ the particle assignment can play a role as well. As we can see, the events of the \emph{narrow} selection, which the particle assignment has been developed on, are solved more often than the ones of the \emph{all} selection, which includes many events with poorly assigned particles.
+
+\subsection{Metrics}
+The main metric on which we compare the different approaches is the weighted maximum separation of the signal from the background calculated as:
+
+\begin{equation}
+    S = \max_{d} \left\{\frac{|z|+|h|}{2\cdot |h|}\cdot |h_{c}(d)| + \frac{|z|+|h|}{2\cdot |z|}\cdot |z_{c}(d)|\right\},
+\label{weights_sep}
+\end{equation}
+where $h$ and $z$ are the test sets of Higgs (or Z) events, $d$ is a value between the minimum and maximum of all predicted masses, which serves as a separator between predicted signal and background, where we assume all predicted masses larger than the separator to be from signal events and others to be from background events:
+\begin{equation}
+    \text{event} \;e \; \text{is} \left\{
+    \begin{array}{ll}
+          \text{signal}, \;\;\;\;\;\;\;\;\;\;\;\;\;       \hat{m}(e) > d,\\
+          \text{background}, \;\;\;\;   \hat{m}(e) \leq d,\\
+    \end{array} 
+    \right.
+\label{sep_eq}
+\end{equation}
+and $h_{c}(d)$ and $z_{c}(d)$ are the sets of events correctly assigned from the original sets by Eq. \ref{sep_eq} for the given separator value $d$. The separation is calculated for one thousand evenly distributed separator values. The values in Eq. \ref{weights_sep} are set in a way so that for both extreme separations\footnote{Predicting all events to be signal or all events to be background.} $|h_c| = |h| \; \wedge \; |z_c| = 0$ and $|h_c| = 0 \; \wedge \; |z_c| = |z|$ the separation is 50\%.
+
+For the separation, the larger the value, the better, and $50\%$ is the baseline of random separation.
+
+Other metrics are the mean $\mu$ and standard deviation $\sigma$ of the Gaussian function (Eq. \ref{gaussian_function_eq}, \cite{gaussian_functino}) fit on the histogram of the predicted masses.
+\begin{equation}
+\label{gaussian_function_eq}
+    f(x) = \frac{1}{\sqrt{2\pi\sigma^2}}\;e^{-\frac{(x-\mu)^2}{2\sigma^2}}.
+\end{equation}
+We also calculate the scaled $\sigma'$ of the Gaussian fit scaled to the Higgs boson mass constant 125.18 as:
+\begin{equation}
+    \sigma' = \sigma \cdot \frac{125.18}{\mu}.
+\label{eq:scaled_sigma}
+\end{equation}
+
+For the Higgs boson mass mean, the value should be as close to the constant 125.18 GeV as possible and have a small $\sigma$.
+
+The separation is considered to be the most important metric as it is not trivial to achieve. For the mean and the $\sigma$ of the mass distribution, we could always predict the constant 125.18 GeV for each event and we would achieve a perfect mean and $\sigma$, but no separation.
+
+The results that will be presented, will have the original predicted mass presented, but the mass distributions could also be scaled to have the mean equal to 125.18 GeV, while the separation would stay the same, but the $\sigma$ would change. To represent such scaling we introduced the scaled $\sigma'$ (Eq. \ref{eq:scaled_sigma}).
+ 
+\subsection{Mass reconstruction results}
+ 
+From Figure \ref{histo_losses} and Table \ref{metrics_losses} we can analyze the performance of the different loss functions.
+
+\begin{figure}[h]
+\centering{
+\resizebox{125mm}{!}{\includegraphics{images/btags_histo_losses.pdf}}
+\caption[Mass histograms — loss functions and MMC]%
+{Mass histograms — loss functions and MMC \par \small Mass reconstructed by neural networks with different loss functions in (a),(b) and (c). In (d) is the reconstructed mass from the MMC for comparison with unsolved events omitted from the plot. Data of Narrow selection from Fig. \ref{data_selections}. Number of events scaled by weighting $t\overline{t}Z$ to match the $t\overline{t}H$, which had a larger dataset. Gaussian function fit in (a) for illustration of mean and STD measurement — left out of (c), (b) and (d) for better readability. Dashed lines mark the Higgs invariant mass 125.18 GeV and Z invariant mass 91.19 GeV.}
+\label{histo_losses}
+}
+\end{figure}
+
+\begin{table}[h]
+\begin{ctucolortab}
+\begin{tabular}{ R{2.3cm} | R{2.6cm}  R{2.3cm}  R{1.9cm}  R{1.4cm}} 
+    \toprule
+    Metric & MMC inspired loss & Four-vector MSE loss & Mass loss & MMC \\
+    \midrule
+    Separation           & 65.84\% & 56.25\% & \bf{69.33}\% & 67.63\% \\
+    Higgs mass $\mu$ (GeV)      & 67.00 & 144.85 & 120.77 & \bf{118.98} \\
+    Higgs mass $\sigma$ (GeV)       & 19.28 & \bf{5.77} & 12.95 & 33.55 \\
+    Higgs mass $\sigma'$ scaled (GeV)       & 36.02 & \bf{4.99} & 13.42 & 35.30 \\
+    \bottomrule
+\end{tabular}
+\end{ctucolortab}
+\caption[Mass reconstruction metrics — loss functions]
+{Mass reconstruction metrics — loss functions \par \small Mean $\mu$ and STD $\sigma$ of Gaussian fit of the mass distribution (as in Fig. \ref{histo_losses}). Highlighted in bold the best performing of the given metric. For Mass loss we also note a $\mu = 113.14$ GeV, $\sigma = 8.11$ GeV and scaled $\sigma'$ = 8.97 of the distribution itself (not the Gaussian fit), as the Gaussian does not fit the distribution well.}
+\label{metrics_losses}
+\end{table}
+
+The poor performance of the four-vector MSE loss in (b) of the figure can be accounted to the loss being focused on the values of the four-vector (momentum and energy) and not directly taking into account the mass, which is the goal value. The thought behind the loss — which was that if we predict the four-vector we can calculate the mass — would require for the four-vector prediction to perform better.
+
+The MMC inspired loss in (a) performed slightly worse than the MMC in terms of separation. The idea of having the NN learn to conserve masses and MET equations translated to the NN quite well and the distributions have a similar shape to the MMC in (d). However, the mean of the distribution is almost two times smaller and even changing the weight of the Higgs (or Z) mass in \ref{mmc_inspired_loss} had no effect on this, as the NN always had about the same performance.
+
+The best separation is achieved by the Single output mass loss in (c) even outperforming the MMC. With the loss fully focused on the goal variable, the NN achieves the best results. The mass distributions are between the Z (91.19 GeV) and Higgs (125.18 GeV) boson constant mass and the NN never predicts outside of the range, as it has not been trained on any values outside of the mentioned range. This additional information (i.e. that the masses lie in this range) that is given to the NN lets it achieve a very good mean and width of the Higgs mass distribution.
+
+The peaks of the MMC mass distributions in (d) being shifted slightly towards lower values than the mass constants, can be explained by the missing energy in the form of an outside\footnote{Outside of the Higgs/Z branch of decay.} neutrino coming from the anti-top branch, which, as has been discussed in Sec. \ref{sec:mmc}, is not accounted for by the MMC.
+
+\subsection{Additional background}
+The Additional backgrounds selection as illustrated in (b) of Fig. \ref{data_selections} expands the previous selection to include the $t\overline{t}W$ and $t\overline{t}$ background productions.
+
+The separation metric will still be used as defined by Eq. \ref{weights_sep}, but with all three backgrounds instead of just the $t\overline{t}Z$.
+
+On this broader dataset we will train and test our NN with the best performing loss function — the Single output mass loss. To have a comparison for the NN, we will once again use the MMC, although as has been discussed in Sec. \ref{sec:mmc}, the MMC is not suited to deal with these added backgrounds, so we will not make any conclusions in regards to the following comparisons.
+
+Figure \ref{histo_added_background} shows the distributions of the predicted masses for the different productions. The histograms of the background had to be scaled to match the $t\overline{t}H$, which had the most test events.
+
+\begin{figure}[h]
+\centering{
+\resizebox{125mm}{!}{\includegraphics{images/btags_histo_HZWtt_train.pdf}}
+\caption[Mass histograms — additional background]%
+{Mass histograms — additional background \par\small Histograms of reconstructed mass by the NN with the Single output mass loss function in (a) and by the MMC in (b). Data of the Additional backgrounds selection from Fig. \ref{data_selections}. Number of events scaled by weighting background productions to match the signal, which had the largest test dataset. Dashed lines mark the Higgs invariant mass 125.18 GeV, Z invariant mass 91.19 GeV and W invariant mass 80.38. For $t\overline{t}$ a 0.00 GeV mass is assumed as the goal value.}
+\label{histo_added_background}
+}
+\end{figure}
+
+From the figure it is visible, that while the  $t\overline{t}H$ and $t\overline{t}Z$ data stayed the same as in the previous data selection in Fig. \ref{histo_losses}, the separation has worsened, as the NN had to account for the new backgrounds as well. The $t\overline{t}W$ and $t\overline{t}$ both have a similar wide distribution, with W having a sharper peak at its corresponding constant mass. The Higgs boson separation from these two backgrounds is much better than from the $t\overline{t}Z$, which can be explained by the Higgs and Z boson productions being very similar, while the other two differ more from the Higgs boson.
+
+The MMC performs excatly the same on the $t\overline{t}H$ and $t\overline{t}Z$, as in Fig. \ref{histo_losses}, because it does not train on the data as the NN does, instead it is deterministic in its calculations. For the $t\overline{t}W$ and $t\overline{t}$ it performs poorly, with a wide distribution with similar peaks to the Higgs, as was expected.
+
+Values supporting the above figure are in Table \ref{metrics_added_background}
+
+\begin{table}[h]
+\begin{ctucolortab}
+\begin{tabular}{ R{3.5cm} | R{3.0cm}  R{3.0cm}} 
+    \toprule
+    Metric & NN (Mass loss)  & MMC \\
+    \midrule
+    Separation            & 67.77\%           & 61.59\% \\
+    Higgs mass $\mu$ (GeV)      & 107.78          & 118.98 \\
+    Higgs mass $\sigma$ (GeV)   & 5.71            & 33.55 \\
+    Higgs mass $\sigma'$ (GeV)   & 6.63            & 35.30 \\
+    \bottomrule
+\end{tabular}
+\end{ctucolortab}
+\caption[Mass reconstruction metrics — additional background]
+{Mass reconstruction metrics — additional background \par \small Mean $\mu$ and STD $\sigma$ of Gaussian fit of the mass distribution (in Fig. \ref{histo_added_background}). For Mass loss we also note a $\mu = 105.09$ GeV, $\sigma = 12.68$ GeV and scaled $\sigma'$ = 15.10 GeV of the distribution itself (not the Gaussian fit), as the Gaussian does not fit the distribution well.}
+\label{metrics_added_background}
+\end{table}
+
+The last detector simulation dataset selection — the Real data selection in Fig. \ref{data_selections} — includes all data tagged with the $2lSS + 1 \tau _{had}$ decay channel variable and with at least three detected jets and one b jet. Compared to the previous selection above, we no longer require the exact decay of the $t\overline{t}H$ and $t\overline{t}Z$ and as such, this selection is done without the use of truth information. These additional $t\overline{t}H$ and $t\overline{t}Z$ events go through the particle assignment NN first, but as their decay structures differ from the one the NN has been developed on, the particle assignment is not effective on these events.
+
+Such events are then more poorly reconstructed by both the NN and the MMC and further worsen the achieved separation as can be seen in Figure \ref{histo_reallike} and Table \ref{metrics_reallike}.
+
+\begin{figure}[h]
+\centering{
+\resizebox{125mm}{!}{\includegraphics{images/btags_histo_HZWtt_no_train.pdf}}
+\caption[Mass histograms — all data]%
+{Mass histograms — all data \par\small Histograms of reconstructed mass by the NN with the single output mass loss function in (a) and by the MMC in (b). Data of selection (c) from Fig. \ref{data_selections}, which simulates the real ATLAS data. Number of events scaled by weighting background productions to match the signal, which had the largest test dataset. Dashed lines mark the Higgs invariant mass 125.18 GeV, Z invariant mass 91.19 GeV and W invariant mass 80.38.}
+\label{histo_reallike}
+}
+\end{figure}
+
+\begin{table}[h]
+\begin{ctucolortab}
+\begin{tabular}{ R{3.5cm} | R{3.0cm}  R{3.0cm}} 
+    \toprule
+    Metric & NN (Mass loss)  & MMC \\
+    \midrule
+    Separation            & 59.21\%           & 53.39\% \\
+    Higgs mass $\mu$ (GeV)      & 105.08          & 116.44 \\
+    Higgs mass $\sigma$ (GeV)   & 7.41            & 37.71 \\
+    Higgs mass $\sigma'$ (GeV)   & 8.83            & 40.54 \\
+    \bottomrule
+\end{tabular}
+\end{ctucolortab}
+\caption[Mass reconstruction metrics — additional background]
+{Mass reconstruction metrics — additional background \par \small Mean $\mu$ and STD $\sigma$ of Gaussian fit of the mass distribution (as in Fig. \ref{histo_reallike}).For Mass loss we also note a $\mu = 102.25$ GeV, $\sigma = 8.19$ GeV and scaled $\sigma'$ = 10.03 GeV of the distribution itself, although the Gaussian function fits quite well.}
+\label{metrics_reallike}
+\end{table}
+
+The NN is still able to achieve some separation, but the Higgs and Z further overlap and the $t\overline{t}W$ and $t\overline{t}$ peaks also shift to higher values and overlap with the Higgs more than previously. Still some separation is achieved with the 59.21\%.
+
+The MMC also achieves poorer reconstruction, than on the previous selection, of both the $t\overline{t}H$ and $t\overline{t}Z$ with wider and more over-lapped distributions.
+
+As this data selection is equal to the data in the real ATLAS data, we also scale the mass distribution by the expected number of events from Table \ref{production_ratios}. Mass distribution scaled to the expected number of events is shown in Figure \ref{fig:expected_histo}.
+
+\begin{figure}[h]
+\centering{
+\resizebox{80mm}{!}{\includegraphics{images/btags_histo_full_scaled.pdf}}
+\caption[Mass histograms — scaled to expected number of events]%
+{Mass histograms — all data scaled \par\small Mass reconstructed by the NN with Mass loss. Data of selection (c) from Fig. \ref{data_selections}, which simulates the real ATLAS data. Number of events scaled to be equal for each production to the number of expected events as per Table \ref{production_ratios}.}
+\label{fig:expected_histo}
+}
+\end{figure}
+
+\subsection{Future improvements}
+The performance of the NN could be further improved by a more careful feature selection, as the features we have selected were based on the thesis of Petr Urban \cite{decay_channel_image} and the inputs of the MMC.
+
+The architecture and choice of the parameter values of the NN also has some space for improvement as it has not been thoroughly optimized (e.g. by grid search \cite[p.125]{data_augmentation}).
+
+\section{Real ATLAS data}
+The neural networks trained on the simulated data will now be used on the real ATLAS data.
+
+For a test on the real data, ideally, we would use the NN trained on the Real data selection from Fig. \ref{data_selections}, which uses no truth information and therefore a neural network trained on such selection is suited to be used on the real ATLAS data, but there are some differences in what variables are in the simulated and the provided real ATLAS datasets.
+
+In the simulated dataset we had the $p_T$, $\eta$, $\phi$ and $E$ information of up to eight detected jets.
+
+The provided real ATLAS dataset has the information of the $p_T$ and $\eta$ of the three most energetic jets detected.
+
+We have therefore decided to study the particle assignment and mass reconstruction of the real ATLAS data without jets and the inclusion remains to be done.
+
+From the features listed in Sec. \ref{assignment_features} we will only use the ones independent of the jets.
+
+\subsection{Particle assignment}
+We retrain the particle assignment NN to accommodate for the new reduced features.
+
+The particle assignment will only assign the two detected leptons in one of two ways. It is again trained and evaluated on the simulated dataset, specifically on the Narrow selection from Fig. \ref{data_selections}, but with only the reduced features.
+
+The results of the evaluation of the trained NN on permutations generated from the simulated test dataset are shown in Figure \ref{fig:c_m_real_simulated} in the form of confusion matrices.
+
+\begin{figure}[h]
+\centering{
+\resizebox{100mm}{!}{\includegraphics{images/cms_real_simulated.pdf}}
+\caption[Lepton assignment with reduced features]%
+{Leptons assignment with reduced features \par \small Confusion matrices of the assignment of the leptons of the NN on a simulated test dataset. Results of assignment over all permutations of all events in the dataset. Reduced features without jet information used.}
+\label{fig:c_m_real_simulated}
+}
+\end{figure}
+
+The Matthews correlation is listed in Table \ref{Tab:matthews_real}.
+
+\begin{table}[h]
+\begin{ctucolortab}
+\begin{tabular}{ R{4.0cm}  R{4.0cm}  } 
+    \toprule
+    Assigned particle & Matthews correlation \\
+    \midrule
+    Tau lepton & 0.502  \\
+    Anti-top lepton  & 0.512   \\
+    \bottomrule
+\end{tabular}
+\end{ctucolortab}
+\caption{Lepton assignment Matthews correlation with reduced features}
+\label{Tab:matthews_real}
+\end{table}
+
+If we compare the results of the particle assignment that are in Figure \ref{fig:c_m_real_simulated} and Table \ref{Tab:matthews_real} with reduced variables with the particle assignment with all the variables (Sec. \ref{sec:p_a_results}), we see that the performance has dropped, as the Matthews correlation went from 0.654 and 0.655 to 0.502 and 0.512 and the percentage of correctly assigned leptons went from 42.2\% to 34.7\% as per the confusion matrices. This was expected because we are training the NN on less information. The drop in performance is not too significant for the real data, as the particle assignment is only effective for the Narrow selection of the events, as has been discussed in Sec. \ref{sec:apllicab}.
+
+\subsection{Mass reconstruction}
+
+The mass reconstruction NN will be the same as presented in previous sections. We will be using the Single output mass loss, which has been evaluated on the Real data selection (Fig. \ref{histo_reallike}).
+
+We retrain the mass reconstruction on the simulated dataset with the reduced features and then use the trained NN on the real ATLAS data.
+
+The mass distribution plot with results on the simulated dataset scaled to the expected number of events for each production (similar to the one in Fig. \ref{fig:expected_histo}) is shown in Fig. \ref{fig:expected_histo_real}.
+
+\begin{figure}[h]
+\centering{
+\resizebox{80mm}{!}{\includegraphics{images/real_simulated_histo.pdf}}
+\caption[Simulated data mass with reduced features]%
+{Simulated data mass with reduced features \par\small Mass reconstructed by the NN with Mass loss. Data of the Real data selection from Fig. \ref{data_selections}. Only available features used without jet information. Number of events scaled to be equal for each production to the number of expected events as per Table \ref{production_ratios}.}
+\label{fig:expected_histo_real}
+}
+\end{figure}
+
+The metrics derived from the reconstructed Higgs boson distribution produced by the NN with reduced features are in Table \ref{metrics_reallike_reduced}.
+
+\begin{table}[h]
+\begin{ctucolortab}
+\begin{tabular}{ R{3.5cm} | R{3.0cm}  R{3.0cm}} 
+    \toprule
+    Metric & NN (Mass loss)  \\
+    \midrule
+    Separation            & 55.65\%            \\
+    Higgs mass $\mu$ (GeV)      & 102.91          \\
+    Higgs mass $\sigma$ (GeV)   & 3.45            \\
+    Higgs mass $\sigma'$ (GeV)   & 4.20          \\
+    \bottomrule
+\end{tabular}
+\end{ctucolortab}
+\caption[Mass reconstruction with reduced features]
+{Mass reconstruction with reduced features \par \small Separation of the signal from the background. Mean $\mu$ and STD $\sigma$ of Gaussian fit of the Higgs boson mass distribution (as in Fig. \ref{fig:expected_histo_real}). We also note a $\mu = 101.49$ GeV, $\sigma = 5.12$ GeV and scaled $\sigma'$ = 6.31 GeV of the distribution without a Gaussian fit.}
+\label{metrics_reallike_reduced}
+\end{table}
+
+A comparison with the results obtained using all the variables (Tab. \ref{metrics_reallike}) is in place. The separation dropped from 59.21\% to 55.65\%, which is a significant difference and is caused by the reduced features containing less information. Still there is some separation achieved.
+
+With the trained neural networks with reduced features ready, we move on to their application on the real data.
+
+First the real data has been extracted from the ROOT ntuples and 101 events were obtained compared to the expected 105.9 events (as was stated in Table \ref{production_ratios}). The selection used for the extraction of the events was similar to the one we used with the simulated data which was the requirement of the $2lSS + 1 \tau _{had}$ tag to be true in an event and at least three detected jets with at least one of them being a b jet. By using the $2lSS + 1 \tau _{had}$ tag and number of jets requirements, we would select 953 events, so such selection would be less strict. The exact selection we used for the real data is in Fig. \ref{fig:appendix_criteria} in Appendix B. 
+
+The 101 events were processed by the trained particle assignment NN and then the mass was reconstructed for each event by the trained mass reconstruction NN. The reconstructed mass distribution is shown in Fig. \ref{fig:real_real_mass_distro}.
+
+\begin{figure}[h]
+\centering{
+\resizebox{90mm}{!}{\includegraphics{images/mass_histo_full_real_root_scaled_.pdf}}
+\caption[Reconstructed mass of real ATLAS events]%
+{Reconstructed mass of real ATLAS data \par\small Mass reconstructed by the NN with Mass loss trained on simulated data. Reconstructed from real ATLAS data with the selection according to Appendix B, which is similar to the selection of $2lSS + 1 \tau _{had}$ decay with at least three jets and one b jet. The error bars show the statistical uncertainties. Graphical representation of the distribution different from the previous figures chosen for the real data.}
+\label{fig:real_real_mass_distro}
+}
+\end{figure}
+
+The distribution in Fig \ref{fig:real_real_mass_distro} is similar to the one in Fig. \ref{fig:expected_histo_real}, which confirms that the events from the simulated dataset are similar to the real ATLAS data.
+
+Lastly, we would like to select three events as the best reconstructed events in which a Higgs boson is produced. We will first reduce the 101 events to 10 events with the best assigned leptons. We do that by choosing the events for which the particle assignment NN returns the highest probabilities of correct assignment (we compute the product of the probabilities similar to Eq. \ref{product_label}, but across events not permutations).
+
+The predicted masses of the 10 best assigned events are in Fig. \ref{fig:best_ten}.
+
+\begin{figure}[h]
+\centering{
+\resizebox{90mm}{!}{\includegraphics{images/mass_histo_full_real_root_scaled_selected_.pdf}}
+\caption[Mass of the best assigned real events]%
+{Mass of the best assigned real events \par\small The 10 best assigned events were chosen from the 101 selected real events. The mass was reconstructed by the NN with the Mass loss trained on simulated data with reduced features. The error bars show the statistical uncertainties.}
+\label{fig:best_ten}
+}
+\end{figure}
+
+The $t\overline{t}H$ achieves the best separation in the highest mass values, as the Higgs boson is the most massive of the reconstructed particles. From the 10 events, we select the 3 with the highest mass as the best reconstructed Higgs boson events. The event numbers of these three events are listed in Table \ref{best_reconstructed_events}.
+
+\begin{table}[h]
+\begin{ctucolortab}
+\begin{tabular}{ R{3.0cm} R{3.5cm}  R{3.0cm}} 
+    \toprule
+    Event number & Year of production & Run number  \\
+    \midrule
+    777623619      & 2016       & 307716        \\
+    1112036381   & 2018         & 351455   \\
+    1139537422   & 2018         & 358577    \\
+    \bottomrule
+\end{tabular}
+\end{ctucolortab}
+\caption[The best reconstructed real $t\overline{t}H$ events]
+{The best reconstructed real $t\overline{t}H$ events \par \small The event number is an identifier of an event produced in ATLAS. The year of production is the year in which the event was detected in ATLAS. The run number is the identifier of the run of ATLAS.}
+\label{best_reconstructed_events}
+\end{table}
+
+
+
+%*-*-*-*-*-*-*-CONCLUSION-*-*-*-*-*-*-*-*
+\chapter*{Conclusion}
+A method for the assignment of detected leptons and jets in the $2lSS + 1 \tau _{had}$ decay of the $t\overline{t}H$ and $t\overline{t}Z$ productions has been developed in the form of a classification neural network trained and tested on the ATLAS detector simulation data. The neural network achieved the rate of 32\% perfectly assigned $t\overline{t}H$ events and 31\% perfectly assigned $t\overline{t}Z$ events.
+
+On the data processed by the particle assignment neural network, a mass reconstruction neural network has been developed. The best out of the three proposed loss functions has achieved a separation of signal from background of 69.33\% on a test set of the aforementioned decay, outperforming the Missing Mass Calculator which achieved a separation of 67.63\%.
+
+The NN was further trained and tested on a dataset with the addition of the $t\overline{t}W$ and $t\overline{t}$ background productions. On this data the NN achieved a separation of 67.77\%.
+
+The final selection of the simulated data included the data from all the mentioned productions without any cuts based on truth information. This selection was equivalent to the data produced by the real ATLAS detector and the achieved separation of the NN was 59.21\%.
+
+The developed methods were applied on the real ATLAS data. We have decided for a study without the jets information. The adjusted networks were used and three best reconstructed Higgs boson events were identified.
+
+In conclusion, the developed neural networks fulfilled the assigned tasks.
+%*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+%*-*-*-*-*-*-*-APPENDIX-*-*-*-*-*-*-*-*
+%*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+
+\appendix
+
+\chapter{Figures and tables}
+In this appendix are additional figures and tables.
+
+\begin{table}[h]
+\begin{ctucolortab}
+\begin{tabular}{ R{4.2cm} | R{2.4cm} R{4.2cm} } 
+    \toprule
+    \thead{Width (neurons in layer)} & \thead{Separation} & \thead{Higgs mass mean (GeV)}  \\
+    \midrule
+    360           & 70.22 & 112.22  \\
+    720          & 70.74 & 112.73  \\
+    1440          & 70.48 & 113.19  \\
+    \bottomrule
+\end{tabular}
+\end{ctucolortab}
+\caption{Neural network architecture experiments - width}
+\label{appendix_first}
+\end{table}
+
+\begin{table}[h]
+\begin{ctucolortab}
+\begin{tabular}{ R{4.2cm} | R{2.4cm} R{4.2cm}} 
+    \toprule
+    \thead{Depth (layers)} & \thead{Separation} & \thead{Higgs mass mean  (GeV)} \\
+    \midrule
+    3           & 70.13 & 112.23 \\
+    4          & 70.63 & 112.57 \\
+    5          & 70.29 & 112.24 \\
+    7          & 70.66 & 113.16 \\
+    \bottomrule
+\end{tabular}
+\end{ctucolortab}
+\caption{Neural network architecture experiments - depth}
+\label{}
+\end{table}
+
+\begin{table}[h]
+\begin{ctucolortab}
+\begin{tabular}{ R{4.2cm} | R{2.4cm} R{4.2cm} } 
+    \toprule
+    \thead{Skip connections} & \thead{Separation} & \thead{Higgs mass mean (GeV)}  \\
+    \midrule
+    yes           & 70.31 & 112.77  \\
+    no          & 70.48 & 113.27  \\
+    \bottomrule
+\end{tabular}
+\end{ctucolortab}
+\caption{Neural network architecture experiments - skip connections}
+\label{appendix_last}
+\end{table}
+
+\begin{figure}[H]
+\centering{
+\resizebox{125mm}{!}{\includegraphics{images/histo_augmentation.pdf}}
+\caption[Mass histograms - data augmentation]%
+{Demonstration of the effect of data augmentation on the mass reconstruction NN. The values derived from the histograms are in Table \ref{tab:appendix_augmentation}.}
+\label{fig:appendix_augmentation}
+}
+\end{figure}
+
+\begin{table}[h]
+\begin{ctucolortab}
+\begin{tabular}{ R{4.6cm} | R{3.0cm}  R{3.0cm}} 
+    \toprule
+    Metric & Augmentation  & No augmentation \\
+    \midrule
+    Separation            & 71.01\%           & 69.38\% \\
+    Higgs mass Gaussian fit $\mu$      & 117.27          & 111.30 \\
+    Higgs mass Gaussian fit $\sigma$   & 10.42            & 7.39 \\
+    Higgs mass $\mu$      & 112.87          & 112.48   \\
+    Higgs mass $\sigma$   &  7.85         & 8.41 \\
+    \bottomrule
+\end{tabular}
+\end{ctucolortab}
+\caption[Mass reconstruction metrics - data augmentation]
+{Mass reconstruction metrics - data augmentation \par\small Neural network trained with data augmentation achieved better separation and mean of the mass distribution closer to the 125 GeV constant.}
+\label{tab:appendix_augmentation}
+\end{table}
+
+\chapter{Real data selection criteria}
+In this appendix is the selection used on the real ATLAS data to extract the wanted events.
+
+\begin{figure}[H]
+\centering{
+\resizebox{125mm}{!}{\includegraphics{images/criteria.png}}
+\caption{Selection used with the real ATLAS data in Python code}
+\label{fig:appendix_criteria}
+}
+\end{figure}
+
+
+%*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+%*-*-*-*-*-*-*-BIBLIOGRAPHY-*-*-*-*-*-*-*-*
+%*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+
+\printbibliography
+
+%\begin{thebibliography}{1}
+%\bibitem{doe} J. Doe. \emph{Book on foobar.} Publisher X,
+%2300.
+%\end{thebibliography}
+
+\end{document}
